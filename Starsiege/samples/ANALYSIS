@@ -1,0 +1,89 @@
+Let's take a look at the first 8 bytes of each of our samples
+(excluding the def* samples, since they're identical to their rle* counterparts).
+
+./set1/lzhtest.vol		20 56 4F 4C E4 08 00 00
+./set1/rletest.vol		20 56 4F 4C 18 10 00 00
+./set2/lzhtest.vol		20 56 4F 4C 18 37 0C 00
+./set2/rletest.vol		20 56 4F 4C 9C D9 0D 00
+./set3/lzhtest.vol		20 56 4F 4C 0C C9 00 00
+./set3/rletest.vol		20 56 4F 4C 34 E5 00 00
+./set4/lzhlzh.vol		20 56 4F 4C C0 11 00 00
+./set4/lzhrle.vol		20 56 4F 4C F4 18 00 00
+./set4/rlelzh.vol		20 56 4F 4C F4 18 00 00
+./set4/rlerle.vol		20 56 4F 4C 28 20 00 00
+./set5/lzhlzh.vol		20 56 4F 4C C0 11 00 00
+./set5/lzhrle.vol		20 56 4F 4C F4 18 00 00
+./set5/rlelzh.vol		20 56 4F 4C F4 18 00 00
+./set5/rlerle.vol		20 56 4F 4C 28 20 00 00
+
+00:03 is always 20 56 4F 4C (That's " VOL" in ASCII). This is our "magic number"
+04:07 is the 32-bit address of the footer in reverse byte order (little endian?)
+
+Now for file headers (8 bytes):
+
+Here are the headers for the first file in our samples:
+
+./set1/lzhtest.vol		56 42 4C 4B D2 08 00 80
+./set1/rletest.vol		56 42 4C 4B 08 10 00 80
+./set2/lzhtest.vol		56 42 4C 4B 08 37 0C 80
+./set2/rletest.vol		56 42 4C 4B 89 D9 0D 80
+./set3/lzhtest.vol		56 42 4C 4B FC C8 00 80
+./set3/rletest.vol		56 42 4C 4B 24 E5 00 80
+./set4/lzhlzh.vol		56 42 4C 4B D2 08 00 80
+./set4/lzhrle.vol		56 42 4C 4B D2 08 00 80
+./set4/rlelzh.vol		56 42 4C 4B 08 10 00 80
+./set4/rlerle.vol		56 42 4C 4B 08 10 00 80
+./set5/lzhlzh.vol		56 42 4C 4B D2 08 00 80
+./set5/lzhrle.vol		56 42 4C 4B D2 08 00 80
+./set5/rlelzh.vol		56 42 4C 4B 08 10 00 80
+./set5/rlerle.vol		56 42 4C 4B 08 10 00 80
+
+And for the second files in set4 and set5:
+
+./set4/lzhlzh.vol		56 42 4C 4B D2 08 00 80
+./set4/lzhrle.vol		56 42 4C 4B 08 10 00 80
+./set4/rlelzh.vol		56 42 4C 4B D2 08 00 80
+./set4/rlerle.vol		56 42 4C 4B 08 10 00 80
+./set5/lzhlzh.vol		56 42 4C 4B D2 08 00 80
+./set5/lzhrle.vol		56 42 4C 4B 08 10 00 80
+./set5/rlelzh.vol		56 42 4C 4B D2 08 00 80
+./set5/rlerle.vol		56 42 4C 4B 08 10 00 80
+
+Bytes 0 through 3 are always 56 42 4C 4B (That's "VBLK" in ASCII)
+Bytes 4 through 6 are the size of the compressed file in reverse
+	byte order.
+Byte 7 is always 80 (€?)
+
+
+
+We're missing something important though. Filenames.
+
+Every archive ends with a footer that contains the file list and such.
+The footer can be preceeded by any number of null bytes.
+The footer is divided into pairs of sections. Each section starts with a four-
+	byte identifier followed by the size of the section in reverse byte order,
+	not including the section headers (identifier and size). The first section
+	of each pair has the four-byte identifier 76 6F 6C 73, "vols" in ASCII. The
+	second section has the identifier 76 6F 6C 69, or "voli" in ASCII.
+
+At this point, it would make sense to compare each section of the archive file
+	to a class.
+	The name of the datatype for the file is "VBLK". It contains an integer for
+		the size, the the data.
+	The datatype signified by "vols" is an array of strings, and the datatype
+		signified by "voli" is an aray of integers. Both contain an integer for
+		their size, then the data within.
+	The string array is delimited by null bytes, and the integer array...
+		requires more research.
+
+As a matter of fact, the entire footer needs more research, but I'll continue on
+	with what I've got.
+
+Each archive ends with a string array, an integer array, a string array, then an
+	integer array.
+	The last string array contains the filenames, and the last integer array
+		contains the file sizes... and something else.
+
+But hey, with this information, we can go ahead and start writing some code!
+
+...but I think I'm going to do some more research first.
