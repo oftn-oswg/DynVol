@@ -53,6 +53,8 @@ Bytes 0 through 3 are always 56 42 4C 4B (That's "VBLK" in ASCII)
 Bytes 4 through 6 are the size of the compressed file in reverse
 	byte order.
 Byte 7 is always 80 (€?)
+	We'd have to try to put a >2GB file in one of these archives in order to
+	figure this one out, so we'll just leave this be for now. 
 
 
 
@@ -73,17 +75,29 @@ At this point, it would make sense to compare each section of the archive file
 	The datatype signified by "vols" is an array of strings, and the datatype
 		signified by "voli" is an aray of integers. Both contain an integer for
 		their size, then the data within.
-	The string array is delimited by null bytes, and the integer array...
-		requires more research.
-
-As a matter of fact, the entire footer needs more research, but I'll continue on
-	with what I've got.
+	Each element of the string array ends with a null-byte.
+	Each element of the integer array is actually four 32-bit integers followed
+		by an ETX byte (0x03) or a NULL byte
 
 Each archive ends with a string array, an integer array, a string array, then an
 	integer array.
-	The last string array contains the filenames, and the last integer array
-		contains the file sizes... and something else.
+	The first string array and the first integer array are usually empty.
+	The last string array contains the filenames
+	The last integer array contains the following set of integers per file:
+		0
+		Filename offset from beginning of data block of character array
+		32-bit address of the file in the archive
+		Filesize
+	The integer sets end with an ETX byte if the file is compressed with LZH,
+		and a NULL byte if the file is compressed with RLE.
+	Path delimiters in the filename array are backslashes. (Windows style, eugh)
 
-But hey, with this information, we can go ahead and start writing some code!
+Keep in mind, some of this could easily change once we start delving into bitmap
+	conversion.
 
-...but I think I'm going to do some more research first.
+
+Now we get into the compression!
+
+LZH is going to take a bit more research. RLE isn't /actually/ RLE though. The
+	file is just stuffed into the archive with no compression. I think most
+	archivers call this storage.
