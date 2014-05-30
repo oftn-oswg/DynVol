@@ -1,0 +1,22 @@
+extract.exe
+Windows PE
+Compiled with Borland C++ compiler (whichever one was copyright 1998)
+No version information
+
+Used to extract files from a vol archive.
+Can't remember if extracting more than one file at a time is supported
+
+Usage: extract.exe <volfile> <internal_filename> [output_filename]
+
+Source files mentioned in strings in the PE:
+	xx.cpp
+	xxtype.cpp
+	code\\filwstrm.cpp (appears to be dynamix source code file)
+
+Signsrch matches:
+	Address        Size Label                                        
+	-------        ---- -----                                        
+	.data:00413420 0040 Huffman LZH p_len [..64]                     
+	.data:00413460 0040 LZ Huffman (lzhuf/lha) encoding table [..64] 
+	.data:004134A0 0100 LZ Huffman (lzhuf/lha) decoding table [..256]
+	.data:004135A0 0100 Huffman LZH d_len [..256]                    

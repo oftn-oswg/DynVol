@@ -1,0 +1,54 @@
+Vt, version 3.01
+Windows PE
+Compiled with Borland C++ compiler (whichever one was copyright 1998)
+
+vt.exe is the program used to create vol archives.
+It can add files to existing archives, but cannot modify files already in archives
+Supports two (three?) types of compression. Different files can be compressed using different methods in the same archive
+Works well in wine
+Can put multiple files of the same name in a vol
+
+Usage: vt [options] volume [@]file
+
+options:
+	-sp						strips path when inserting file into vol
+	-lzh        			set compression type to LZH (lempel-ziv huffman)
+	-rle        			set compression type to RLE (run-length encoding)
+							This seems to be the default
+	-cpt        			compact the volume into a new volume named file.
+							Haven't looked into this one much yet
+							(if volume doesn't exist, it's automatically created, so I guess this is for making compression consistent?)
+	-nobpm      			don't convert .dib's or .bmp's into phoenix bitmaps.
+							Haven't looked into this one much yet
+    -q      		 		quiet mode
+    -lz 		     		(undocumented) set compression type to LZ (lempel-ziv)
+    						Appears to work, then crashes on use.
+ 	-dml[#bmp_path]			adds bitmaps from dml file into volume
+							Haven't looked into this one much yet
+ 	-mip[#n[#pallete_file]]	invokes MIPMAKE to mip the bmp
+							Haven't looked into this one much yet
+ 	-r(min,max)				set mipmap pallete range(s) restrictions
+							Haven't looked into this one much yet
+	-s       				(undocumented) unknown, obsolete
+							Haven't looked into this one much yet
+          					There is code to print "vt: \"-s\" option is obsolete, ignoring\n" to stdout present
+ 	-n  		   			(undocumented) unknown, obsolete
+							Haven't looked into this one much yet
+	          				There is code to print "vt: \"-n\" option is obsolete, ignoring\n" to stdout present
+	[@]                     @ symbol before addfile implies addfile is a script file of args to pas to vt (omit volume on all lines)
+							Haven't looked into this one much yet
+
+
+
+Source files mentioned in strings in the PE:
+	xx.cpp
+	xxtype.cpp
+	code\\filwstrm.cpp (appears to be dynamix source code file)
+
+Signsrch matches:
+	Address        Size Label                                        
+	-------        ---- -----                                        
+	.data:004190C4 0040 Huffman LZH p_len [..64]                     
+	.data:00419104 0040 LZ Huffman (lzhuf/lha) encoding table [..64] 
+	.data:00419144 0100 LZ Huffman (lzhuf/lha) decoding table [..256]
+	.data:00419244 0100 Huffman LZH d_len [..256]                    

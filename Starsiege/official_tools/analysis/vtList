@@ -1,0 +1,27 @@
+VTList, version 1.00
+Windows PE
+Compiled with Borland C++ compiler (whichever one was copyright 1998)
+
+vtList.exe is the program used to list and search for files in vol archives.
+It apears that it can only list a certain number of files before exiting.
+	(the string "match list full, %s may have have more entries ..\n" exists)
+
+
+Usage: VTList <expression> name1.vol [name2.vol] [*.vol]
+	<expression> is the search string for files in the volume(s).
+		Does not appear to be regex, but the wildcards * and ? are supported
+		It is a required arg
+	The wildcards * and ? are also supported when specifying vol archive(s)	
+
+Source files mentioned in strings:
+	xx.cpp
+	xxtype.cpp
+	code\\volstrm.cpp (appears to be dynamix source code file)
+
+Signsrch matches:
+	Address        Size Label                                        
+	-------        ---- -----                                        
+	.data:0041348C 0040 Huffman LZH p_len [..64]                     
+	.data:004134CC 0040 LZ Huffman (lzhuf/lha) encoding table [..64] 
+	.data:0041350C 0100 LZ Huffman (lzhuf/lha) decoding table [..256]
+	.data:0041360C 0100 Huffman LZH d_len [..256]                    
