@@ -16,6 +16,7 @@
 
 VOL vol_load(const gchar* path)
 {
+	g_log_set_handler(G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_RECURSION | G_LOG_FLAG_FATAL, logfunc, NULL);
 	GError *error = NULL;
 	GIOStatus ret = G_IO_STATUS_NORMAL;
 	struct volume* handle;
@@ -48,7 +49,6 @@ VOL vol_load(const gchar* path)
 
 	handle->path = g_strdup(path);
 
-	g_log_set_handler(G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_RECURSION | G_LOG_FLAG_FATAL, logfunc, NULL);
 	//We're just going to make the assumption that the file isn't going to change between testing and use.
 	if (!g_file_test (path, G_FILE_TEST_EXISTS))
 	{
@@ -106,7 +106,7 @@ void vol_unload(VOL handle)
 		g_free(g_array_free(vhnd->footer.unknown_vval.data, TRUE));
 	log_debug("Freeing filenames.");
 	if (vhnd->footer.filenames.data != NULL)
-		g_ptr_array_free(vhnd->footer.filenames.data, TRUE);
+		g_ptr_array_free(vhnd->footer.filenames.data, TRUE); //TODO: Figure out why this generates an error when linked symbolicly.
 	log_debug("Freeing fileprops.");
 	if (vhnd->footer.fileprops.data != NULL)
 		g_free(g_array_free(vhnd->footer.fileprops.data, TRUE));
@@ -194,6 +194,12 @@ guint32 vol_getvval(VOL handle, struct volv *vvalarr, const guint32 offset)
 	return (offset+vvalarr->header.val+sizeof(struct header));
 }
 
+void printfiles(gpointer name, gpointer count)
+{
+	(*(guint*)count)++;
+	log_info("\tFile %u: %s", (*(guint*)count), (gchar*)name);
+}
+
 guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset)
 {
 	struct volume* vhnd = handle;
@@ -202,7 +208,7 @@ guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset)
 	GIOStatus ret1 = G_IO_STATUS_NORMAL;
 	guint64 rd;
 	guint32 ret, os;
-	guint8 bite;
+	guint8 bite = 0x00;
 	ret = os = offset;
 	gint i, j = 0;
 	log_debug("Scraping array header.");
@@ -262,11 +268,13 @@ guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset)
 				//TODO: For windows, warn about forwardslashes (and any other invalid characters)
 				log_warning("An internal path string may contain backslashes.");
 			}
+			bite = 0x00;
 		}
 		guint* k;
-		(*k) = 0;
+		k = g_malloc0(sizeof(guint));
 		log_info("Filename array created.");
 		g_ptr_array_foreach(fnarr->data, printfiles, (gpointer)k);
+		g_free(k);
 	} else {
 		log_message("Array is empty. (No files in volume?)");
 		fnarr->data = NULL;
@@ -295,7 +303,7 @@ guint32 vol_getfileprops(VOL handle, struct volv *attrarr, const guint32 offset)
 		log_debug("Fetching array data.");
 		for (i = 0; i < attrarr->header.val; i+=(sizeof(struct vval)))
 		{
-			struct vval *propset;
+			struct vval *propset = g_malloc0(sizeof(struct vval));
 			log_debug("Pulling value set at offset 0x%x", os+i);
 			g_io_channel_seek_position(vhnd->volio, (gint64)(os+i), G_SEEK_SET, &error);
 			//TODO: Check for errors
@@ -311,6 +319,7 @@ guint32 vol_getfileprops(VOL handle, struct volv *attrarr, const guint32 offset)
 			//TODO: Update file struct array
 			//TODO: Get VBLK headers for each file
 			g_array_append_val(attrarr->data, (*propset));
+			g_free(propset);
 		}
 	} else {
 		log_message("Array is empty. (No files in volume?)");

@@ -1,0 +1,21 @@
+## Process this file with automake to produce Makefile.in
+
+AM_CFLAGS := $(GLIB_CFLAGS) $(AM_FLAGS)
+
+lib_LTLIBRARIES = libdynvol.la
+libdynvol_la_SOURCES = dynvol.c util.c
+libdynvol_la_LDFLAGS = -version-info 0:2:0
+libdynvol_la_LIBADD = $(GLIB_LIBS)
+libdynvol_la_CFLAGS = -DG_LOG_DOMAIN=\"DynVol\" $(AM_CFLAGS)
+include_HEADERS = dynvol.h
+
+bin_PROGRAMS = test test_static
+
+test_SOURCES = test.c
+test_LDADD = libdynvol.la $(GLIB_LIBS)
+
+test_static_SOURCES = test.c
+test_static_LDADD = libdynvol.la -lglib $(GLIB_LIBS)
+test_static_LDFLAGS = -static
+
+MAINTAINERCLEANFILES = Makefile.in Makefile
