@@ -194,12 +194,6 @@ guint32 vol_getvval(VOL handle, struct volv *vvalarr, const guint32 offset)
 	return (offset+vvalarr->header.val+sizeof(struct header));
 }
 
-void printfiles(gpointer name, gpointer count)
-{
-	(*(guint*)count)++;
-	log_info("\tFile %u: %s", (*(guint*)count), (gchar*)name);
-}
-
 guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset)
 {
 	struct volume* vhnd = handle;

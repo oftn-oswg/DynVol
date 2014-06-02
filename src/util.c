@@ -64,3 +64,8 @@ void logfunc(const gchar *domain, GLogLevelFlags level, const gchar *message, gp
 		print("%s\n", message);
 }
 
+void printfiles(gpointer name, gpointer count)
+{
+	(*(guint*)count)++;
+	log_info("\tFile %u: %s", (*(guint*)count), (gchar*)name);
+}
