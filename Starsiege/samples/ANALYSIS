@@ -54,7 +54,8 @@ Bytes 4 through 6 are the size of the compressed file in reverse
 	byte order.
 Byte 7 is always 80 (€?)
 	We'd have to try to put a >2GB file in one of these archives in order to
-	figure this one out, so we'll just leave this be for now. 
+	figure this one out, so we'll just leave this be for now. Might do some
+	experimenting in code.
 
 
 
@@ -82,7 +83,8 @@ At this point, it would make sense to compare each section of the archive file
 Each archive ends with a string array, an integer array, a string array, then an
 	integer array.
 	The first string array and the first integer array are usually empty.
-	The last string array contains the filenames
+	The last string array contains the filenames /exactly/ as they were passed
+		to vt.
 	The last integer array contains the following set of integers per file:
 		0
 		Filename offset from beginning of data block of character array
@@ -90,7 +92,6 @@ Each archive ends with a string array, an integer array, a string array, then an
 		Filesize
 	The integer sets end with an ETX byte if the file is compressed with LZH,
 		and a NULL byte if the file is compressed with RLE.
-	Path delimiters in the filename array are backslashes. (Windows style, eugh)
 
 Keep in mind, some of this could easily change once we start delving into bitmap
 	conversion.
@@ -99,5 +100,9 @@ Keep in mind, some of this could easily change once we start delving into bitmap
 Now we get into the compression!
 
 LZH is going to take a bit more research. RLE isn't /actually/ RLE though. The
-	file is just stuffed into the archive with no compression. I think most
-	archivers call this storage.
+	file is just stuffed into the archive with no compression.
+
+
+There's some extremely disorganized code in the src directory capable of reading
+	most of the metadata from Starsiege volume archives into some structs, or at
+	least most of what's documented here.
