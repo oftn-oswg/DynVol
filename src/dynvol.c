@@ -123,23 +123,11 @@ void vol_unload(VOL handle)
 void vol_getheader(VOL handle, struct header *header, const guint32 offset)
 {
 	struct volume* vhnd = handle;
-	GError *error = NULL;
-	guint64 rd;
-	GIOStatus ret = G_IO_STATUS_NORMAL;
-	log_info("Fetching header at offset 0x%x.", offset);
-	log_debug("Seeking to offset.");
-	ret = g_io_channel_seek_position(vhnd->volio, (gint64)offset, G_SEEK_SET, &error);
-	if (ret != G_IO_STATUS_NORMAL)
-	{
-		log_error("Could not seek in file.\n\t%s", error->message);
-	}
-	log_debug("Reading from file.");
-	g_io_channel_read_chars(vhnd->volio, (gchar*)header, (gsize)sizeof(struct header), &rd, &error);
-	//TODO: Check for errors
+	log_info("Fetching header");
+	readinto(vhnd->volio, offset, (gsize)sizeof(struct header), (gpointer)header);
 	log_debug("Got header:");
 	log_debug("\tIDstring: %c%c%c%c", header->ident[0], header->ident[1], header->ident[2], header->ident[3]);
 	log_debug("\tValue: 0x%x", header->val);
-	log_debug("%lu bytes read", rd);
 }
 
 void vol_getfooter(VOL handle)
@@ -164,7 +152,20 @@ void vol_getmetadata(VOL handle)
 	struct volume* vhnd = handle;
 	log_info("Fetching volume metadata.");
 	vol_getheader(handle, &vhnd->header, 0);
-	//TODO: Verify magic number
+
+	//Header verification
+	if (memcmp(" VOL", vhnd->header.ident, 4) == 0) {
+		log_debug("Magic number recognized. Archive is Starsiege volume.");
+	} else if (memcmp("PVOL", vhnd->header.ident, 4) == 0) {
+		log_debug("Magic number recognized. Archive is Tribes 1 volume.");
+		log_critical("Currently, only Starsiege volumes are supported.");
+	} else if (memcmp("VOLN", vhnd->header.ident, 4) == 0) {
+		log_debug("Magic number recognized. Archive is Earthsiege/Earthsiege 2 volume.");
+		log_critical("Currently, only Starsiege volumes are supported.");
+	} else {
+		log_critical("Magic number not recognized.");
+	}
+
 	vol_getfooter(handle);
 }
 
@@ -175,7 +176,10 @@ guint32 vol_getvstr(VOL handle, struct vols *vstrarr, const guint32 offset)
 	log_info("Fetching string array at 0x%x.", offset);
 	log_debug("Scraping array header.");
 	vol_getheader(handle, &vstrarr->header, offset);
-	//TODO: Verify header string
+	//Header verification
+	if (memcmp("vols", vstrarr->header.ident, 4)) {
+		log_critical("Array identity string not recognized.");
+	}
 	log_info("Skipping contents of unknown array.");
 	vstrarr->data = NULL;
 	return (offset+vstrarr->header.val+sizeof(struct header));
@@ -188,7 +192,10 @@ guint32 vol_getvval(VOL handle, struct volv *vvalarr, const guint32 offset)
 	log_info("Fetching value set array at 0x%x.", offset);
 	log_debug("Scraping array header.");
 	vol_getheader(handle, &vvalarr->header, offset);
-	//TODO: Verify header string
+	//Header verification
+	if (memcmp("voli", vvalarr->header.ident, 4)) {
+		log_critical("Array identity string not recognized.");
+	}
 	log_info("Skipping contents of unknown array.");
 	vvalarr->data = NULL;
 	return (offset+vvalarr->header.val+sizeof(struct header));
@@ -197,17 +204,19 @@ guint32 vol_getvval(VOL handle, struct volv *vvalarr, const guint32 offset)
 guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset)
 {
 	struct volume* vhnd = handle;
-	log_info("Fetching filenames from array at 0x%x.", offset);
+	log_info("Fetching filenames from array.");
 	GError *error = NULL;
 	GIOStatus ret1 = G_IO_STATUS_NORMAL;
-	guint64 rd;
 	guint32 ret, os;
 	guint8 bite = 0x00;
 	ret = os = offset;
 	gint i, j = 0;
 	log_debug("Scraping array header.");
 	vol_getheader(handle, &fnarr->header, os);
-	//TODO: Verify header string
+	//Header verification
+	if (memcmp("vols", fnarr->header.ident, 4)) {
+		log_critical("Array identity string not recognized.");
+	}
 	//vslist_init(&vstrarr->data);TODO
 	ret+=sizeof(struct header);
 	if (fnarr->header.val != 0)
@@ -220,37 +229,13 @@ guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset)
 			if (j == 0)
 				log_debug("Seeking to end of string.");
 			j++;
-			//log_debug("Seeking...");
-			while ((ret1 = g_io_channel_seek_position(vhnd->volio, (gint64)(os+j), G_SEEK_SET, &error)) == G_IO_STATUS_AGAIN)
-				log_message("Resource unavaliable! Will retry.");
-			if (ret1 == G_IO_STATUS_EOF)
-			{
-				log_error("Premature end of file!");
-			} else if (ret1 != G_IO_STATUS_NORMAL)
-			{
-				log_error("Could not seek in file.\n\t%s", error->message);
-			}
-			//log_debug("Reading...");
-			while ((ret1 = g_io_channel_read_chars(vhnd->volio, &bite, (gsize)sizeof(guint8), &rd, &error)) == G_IO_STATUS_AGAIN)
-				log_message("Resource unavaliable! Will retry.");
-			if (ret1 != G_IO_STATUS_NORMAL)
-			{
-				log_error("Could not read from file.\n\t%s", error->message);
-			}
-			//TODO: Check for errors
-			//TODO: Put rd in debug log
-			//log_debug("Checking..");
+			bite = readbyte(vhnd->volio, (guint64)(os+j));
 			if (bite == 0x00)
 			{
 				j++;
 				log_debug("String at offset 0x%x indexed. Size is %d. Pulling now.", os, j);
 				gchar *data;
-				(data) = g_malloc(sizeof(gchar)*j);
-				g_io_channel_seek_position(vhnd->volio, (gint64)os, G_SEEK_SET, &error);
-				//TODO: Check for errors
-				g_io_channel_read_chars(vhnd->volio, data, (gsize)sizeof(gchar)*j, &rd, &error);
-				//TODO: Check for errors
-				//TODO: Put rd in debug log
+				data = readpart(vhnd->volio, (guint64)os, sizeof(gchar)*j);
 				log_debug("Pulled string: %s.", data);
 				i++;
 				os+=j;
@@ -280,15 +265,16 @@ guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset)
 guint32 vol_getfileprops(VOL handle, struct volv *attrarr, const guint32 offset)
 {
 	struct volume* vhnd = handle;
-	GError *error = 0;
-	log_info("Fetching file properties array at 0x%x.", offset);
+	log_info("Fetching file properties array.");
 	guint32 ret, os;
-	guint64 *rd;
 	ret = os = offset;
 	gint i;
 	log_debug("Scraping array header.");
 	vol_getheader(handle, &attrarr->header, offset);
-	//TODO: Verify header string
+	//Header verification
+	if (memcmp("voli", attrarr->header.ident, 4)) {
+		log_critical("Array identity string not recognized.");
+	}
 	ret+=sizeof(struct header);
 	if (attrarr->header.val != 0)
 	{
@@ -298,12 +284,8 @@ guint32 vol_getfileprops(VOL handle, struct volv *attrarr, const guint32 offset)
 		for (i = 0; i < attrarr->header.val; i+=(sizeof(struct vval)))
 		{
 			struct vval *propset = g_malloc0(sizeof(struct vval));
-			log_debug("Pulling value set at offset 0x%x", os+i);
-			g_io_channel_seek_position(vhnd->volio, (gint64)(os+i), G_SEEK_SET, &error);
-			//TODO: Check for errors
-			g_io_channel_read_chars(vhnd->volio, (gchar*)propset, (gsize)sizeof(struct vval), rd, &error);
-			//TODO: Check for errors
-			//TODO: Put rd in debug log
+			log_debug("Pulling value set.");
+			readinto(vhnd->volio, (guint64)(os+i), (gsize)sizeof(struct vval), (gpointer)propset);
 			log_info("Values pulled:");
 			log_info("\t32-bit value 1:\t0x%x\t(unknown)", propset->field_1);
 			log_info("\t32-bit value 2:\t0x%x\t(filename array offset)", propset->field_2);
