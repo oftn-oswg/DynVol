@@ -15,9 +15,34 @@
 extern "C" {
 #endif
 
-typedef gpointer VOL;
 // Handle for your volume.
+typedef gpointer VOL;
 
+#define VOL_ERR_LEN 128 //This is pretty arbitrary for now
+
+typedef enum {
+	VERR_OK= 0,
+	VERR_UNKNOWN,
+	VERR_FILE_NOT_FOUND,
+	VERR_ARCHIVE_UNRECOGNIZED,
+	VERR_UNSUPPORTED_ARCHIVE,
+	VERR_BROKEN_ARCHIVE,
+	VERR_UNEXPECTED_EOF,
+	VERR_SEEK_FAILED,
+	VERR_READ_FAILED,
+	VERR_LAST //Not actually an error
+} VErrcode;
+
+
+
+//struct for DynVol errors
+struct _errstruct {
+	VErrcode code;
+	gchar message[VOL_ERR_LEN];
+	//gpointer addtl_data; //not used yet
+};
+
+typedef struct _errstruct VErr;
 
 
 /**
@@ -38,6 +63,15 @@ VOL vol_load(const gchar* volume);
  * Close and unload the volume associated with handle @handle.
  **/
 void vol_unload(VOL handle);
+
+
+/**
+ * vol_get_error
+ * @handle: A volume handle as returned by vol_load
+ * 
+ * Returns a VErr containing information about the last run DynVol function.
+ **/
+VErr vol_get_error(VOL handle);
 
 
 #ifdef __cplusplus

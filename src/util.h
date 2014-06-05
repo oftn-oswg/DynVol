@@ -109,7 +109,7 @@ void printfiles(gpointer name, gpointer count);
 //Should be g_free()'d when done
 gchar* readpart(GIOChannel *stream, const guint64 offset, const guint64 bytes);
 
-gchar readbyte(GIOChannel *stream, const guint64 offset);
-void readinto(GIOChannel *stream, const guint64 offset, const gsize size, gpointer container);
+VErrcode readbyte(GIOChannel *stream, const guint64 offset, guint8 *byte);
+VErrcode readinto(GIOChannel *stream, const guint64 offset, const gsize size, gpointer container);
 
 #endif

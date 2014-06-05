@@ -27,12 +27,14 @@ struct __attribute__((__packed__)) VBLK
 struct __attribute__((__packed__)) vols
 {
 	struct header header;
+	guint32 offset;
 	GPtrArray *data;
 };
 
 struct __attribute__((__packed__)) volv
 {
 	struct header header;
+	guint32 offset;
 	GArray *data;
 };
 
@@ -75,25 +77,34 @@ struct __attribute__((__packed__)) volume
 	gboolean writable;
 	struct header header;
 	struct footer footer;
+	VErrcode error;
 };
 
 //Fetches metadata and stores it inside vol
-void vol_getmetadata(VOL handle);
+VErrcode vol_getmetadata(VOL handle);
 
 //Fetches volume footer and stores it inside vol
-void vol_getfooter(VOL handle);
+VErrcode vol_getfooter(VOL handle);
 
 //Fetches a header
-void vol_getheader(VOL handle, struct header *header, const guint32 offset);
+VErrcode vol_getheader(VOL handle, struct header *header, const guint32 offset);
 
 //Functions for skipping the first two arrays in the footer
 //Probably temporary
-guint32 vol_getvstr(VOL handle, struct vols *vstrarr, const guint32 offset);
-guint32 vol_getvval(VOL handle, struct volv *vvalarr, const guint32 offset);
+VErrcode vol_getvstr(VOL handle);
+VErrcode vol_getvval(VOL handle);
 
 //Functions for fetching file metadata
-guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset);
-guint32 vol_getfileprops(VOL handle, struct volv *attrarr, const guint32 offset);
+VErrcode vol_getfilenames(VOL handle);
+VErrcode vol_getfileprops(VOL handle);
+
+
+struct _v_globalstuff
+{
+	GPtrArray *errors;
+};
+
+extern struct _v_globalstuff VGlobals;
 
 
 #endif

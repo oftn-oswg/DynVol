@@ -25,6 +25,7 @@ VOL vol_load(const gchar* path)
 
 	log_debug("Allocating memory for volume data container.");
 	handle=g_malloc(sizeof(struct volume));
+	//TODO: Figure out how to return errors properly in this function
 
 	//initialize variables
 	handle->path = NULL;
@@ -52,11 +53,13 @@ VOL vol_load(const gchar* path)
 	//We're just going to make the assumption that the file isn't going to change between testing and use.
 	if (!g_file_test (path, G_FILE_TEST_EXISTS))
 	{
-		log_error("Volumme %s does not exist. Creation of new volumes not yet supported.", path);
-		return NULL;
+		log_critical("Volumme %s does not exist. Creation of new volumes not yet supported.", path);
+		handle->error = VERR_FILE_NOT_FOUND;
+		//return NULL;
 	} else if (!g_file_test (path, G_FILE_TEST_IS_REGULAR)) {
 		log_error("Cannot open %s.", path);
-		return NULL;
+		handle->error = VERR_UNKNOWN;
+		//return NULL;
 	}
 	log_debug("Attempting to open %s", path);
 	handle->volio = g_io_channel_new_file(path, "r", &error);
@@ -66,6 +69,8 @@ VOL vol_load(const gchar* path)
 	//This archive format is broken enough as it is...
 	if (!handle->volio) {
 		log_error("Failed opening %s\n\t%s", path, error->message);
+		handle->error = VERR_UNKNOWN;
+		return NULL;
 	}
 	handle->open = TRUE;
 	log_debug("Setting encoding to NULL.");
@@ -82,6 +87,7 @@ VOL vol_load(const gchar* path)
 
 void vol_unload(VOL handle)
 {
+	//TODO: Figure out how to return errors from this func
 	struct volume* vhnd = handle;
 	log_info("Unoading volume %s.", vhnd->path);
 	GIOStatus ret = G_IO_STATUS_NORMAL;
@@ -94,7 +100,7 @@ void vol_unload(VOL handle)
 		else
 			ret = g_io_channel_shutdown(vhnd->volio, FALSE, &error);
 		if (ret != G_IO_STATUS_NORMAL)
-			log_error("Failed closing file.\n\t%s", error->message);
+			log_warning("Failed closing file.\n\t%s", error->message);
 		vhnd->open = FALSE;
 	}
 	log_debug("Freeing memory.");
@@ -120,38 +126,46 @@ void vol_unload(VOL handle)
 
 }
 
-void vol_getheader(VOL handle, struct header *header, const guint32 offset)
+VErrcode vol_getheader(VOL handle, struct header *header, const guint32 offset)
 {
 	struct volume* vhnd = handle;
 	log_info("Fetching header");
-	readinto(vhnd->volio, offset, (gsize)sizeof(struct header), (gpointer)header);
+	VErrcode err = readinto(vhnd->volio, offset, (gsize)sizeof(struct header), (gpointer)header);
 	log_debug("Got header:");
 	log_debug("\tIDstring: %c%c%c%c", header->ident[0], header->ident[1], header->ident[2], header->ident[3]);
 	log_debug("\tValue: 0x%x", header->val);
+	return err;
 }
 
-void vol_getfooter(VOL handle)
+VErrcode vol_getfooter(VOL handle)
 {
 	struct volume* vhnd = handle;
 	log_info("Fetching volume footer.");
-	guint32 offset = vhnd->header.val;
+	vhnd->footer.unknown_vstr.offset = vhnd->header.val;
 
 	//TODO: figure out what these are for
 	//TODO: figure out if content format varies from the other arrays
-	offset = vol_getvstr(handle, &vhnd->footer.unknown_vstr, offset);
-	offset = vol_getvval(handle, &vhnd->footer.unknown_vval, offset);
+	VErrcode err = vol_getvstr(handle);
+	if (err)
+		return err;
+	err = vol_getvval(handle);
+	if (err)
+		return err;
 
 
-	offset = vol_getfilenames(handle, &vhnd->footer.filenames, offset);
-	offset = vol_getfileprops(handle, &vhnd->footer.fileprops, offset);
-
+	err = vol_getfilenames(handle);
+	if (err)
+		return err;
+	return vol_getfileprops(handle);
 }
 
-void vol_getmetadata(VOL handle)
+VErrcode vol_getmetadata(VOL handle)
 {
 	struct volume* vhnd = handle;
 	log_info("Fetching volume metadata.");
-	vol_getheader(handle, &vhnd->header, 0);
+	VErrcode err = vol_getheader(handle, &vhnd->header, 0);
+	if (err)
+		return err;
 
 	//Header verification
 	if (memcmp(" VOL", vhnd->header.ident, 4) == 0) {
@@ -159,81 +173,92 @@ void vol_getmetadata(VOL handle)
 	} else if (memcmp("PVOL", vhnd->header.ident, 4) == 0) {
 		log_debug("Magic number recognized. Archive is Tribes 1 volume.");
 		log_critical("Currently, only Starsiege volumes are supported.");
+		return VERR_UNSUPPORTED_ARCHIVE;
 	} else if (memcmp("VOLN", vhnd->header.ident, 4) == 0) {
 		log_debug("Magic number recognized. Archive is Earthsiege/Earthsiege 2 volume.");
 		log_critical("Currently, only Starsiege volumes are supported.");
+		return VERR_UNSUPPORTED_ARCHIVE;
 	} else {
 		log_critical("Magic number not recognized.");
+		return VERR_ARCHIVE_UNRECOGNIZED;
 	}
 
-	vol_getfooter(handle);
+	return vol_getfooter(handle);
 }
 
-guint32 vol_getvstr(VOL handle, struct vols *vstrarr, const guint32 offset)
+VErrcode vol_getvstr(VOL handle)
 {
 	//gets header only
 	struct volume* vhnd = handle;
-	log_info("Fetching string array at 0x%x.", offset);
+	log_info("Fetching string array.");
 	log_debug("Scraping array header.");
-	vol_getheader(handle, &vstrarr->header, offset);
+	VErrcode err = vol_getheader(handle, &vhnd->footer.unknown_vstr.header, vhnd->footer.unknown_vstr.offset);
+	if (err)
+		return err;
 	//Header verification
-	if (memcmp("vols", vstrarr->header.ident, 4)) {
-		log_critical("Array identity string not recognized.");
+	//There might be a memory leak here
+	if (memcmp("vols", vhnd->footer.unknown_vstr.header.ident, 4)) {
+		log_warning("Array identity string not recognized.");
+		//Not setting error here, at least not yet
 	}
 	log_info("Skipping contents of unknown array.");
-	vstrarr->data = NULL;
-	return (offset+vstrarr->header.val+sizeof(struct header));
+	vhnd->footer.unknown_vstr.data = NULL;
+	vhnd->footer.unknown_vval.offset = vhnd->footer.unknown_vstr.offset+sizeof(struct header)+vhnd->footer.unknown_vstr.header.val;
+	return err;
 }
 
-guint32 vol_getvval(VOL handle, struct volv *vvalarr, const guint32 offset)
+VErrcode vol_getvval(VOL handle)
 {
 	//gets header only
 	struct volume* vhnd = handle;
-	log_info("Fetching value set array at 0x%x.", offset);
+	log_info("Fetching value set array.");
 	log_debug("Scraping array header.");
-	vol_getheader(handle, &vvalarr->header, offset);
+	VErrcode err = vol_getheader(handle, &vhnd->footer.unknown_vval.header, vhnd->footer.unknown_vval.offset);
+	if (err)
+		return err;
 	//Header verification
-	if (memcmp("voli", vvalarr->header.ident, 4)) {
+	if (memcmp("voli", vhnd->footer.unknown_vval.header.ident, 4)) {
 		log_critical("Array identity string not recognized.");
+		//Not setting error here, at least not yet
 	}
 	log_info("Skipping contents of unknown array.");
-	vvalarr->data = NULL;
-	return (offset+vvalarr->header.val+sizeof(struct header));
+	vhnd->footer.unknown_vval.data = NULL;
+	vhnd->footer.filenames.offset = vhnd->footer.unknown_vval.offset+sizeof(struct header)+vhnd->footer.unknown_vval.header.val;
+	return err;
 }
 
-guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset)
+VErrcode vol_getfilenames(VOL handle)
 {
 	struct volume* vhnd = handle;
 	log_info("Fetching filenames from array.");
-	GError *error = NULL;
-	GIOStatus ret1 = G_IO_STATUS_NORMAL;
-	guint32 ret, os;
-	guint8 bite = 0x00;
-	ret = os = offset;
+	guint64 os;
+	os = vhnd->footer.filenames.offset;
 	gint i, j = 0;
+	guint8 bite;
 	log_debug("Scraping array header.");
-	vol_getheader(handle, &fnarr->header, os);
+	VErrcode err = vol_getheader(handle, &vhnd->footer.filenames.header, vhnd->footer.filenames.offset);
+	if (err)
+		return err;
 	//Header verification
-	if (memcmp("vols", fnarr->header.ident, 4)) {
+	if (memcmp("vols", vhnd->footer.filenames.header.ident, 4)) {
 		log_critical("Array identity string not recognized.");
+		return VERR_BROKEN_ARCHIVE;
 	}
-	//vslist_init(&vstrarr->data);TODO
-	ret+=sizeof(struct header);
-	if (fnarr->header.val != 0)
+	if (vhnd->footer.filenames.header.val != 0)
 	{
-		os = ret;
-		fnarr->data = g_ptr_array_new_with_free_func(g_free);
+		os+=sizeof(struct header);
+		vhnd->footer.filenames.data = g_ptr_array_new_with_free_func(g_free);
 		log_debug("Fetching array data.");
-		for (i = 0; i < fnarr->header.val; i++)
+		for (i = 0; i < vhnd->footer.filenames.header.val; i++)
 		{
 			if (j == 0)
 				log_debug("Seeking to end of string.");
 			j++;
-			bite = readbyte(vhnd->volio, (guint64)(os+j));
+			readbyte(vhnd->volio, (guint64)(os+j), &bite);
 			if (bite == 0x00)
 			{
 				j++;
-				log_debug("String at offset 0x%x indexed. Size is %d. Pulling now.", os, j);
+				log_debug("String at offset 0x%lx indexed. Size is %d. Pulling now.", os, j);
 				gchar *data;
 				data = readpart(vhnd->volio, (guint64)os, sizeof(gchar)*j);
 				log_debug("Pulled string: %s.", data);
@@ -241,51 +266,53 @@ guint32 vol_getfilenames(VOL handle, struct vols *fnarr, const guint32 offset)
 				os+=j;
 				j=0;
 				log_debug("Adding string to array.");
-				g_ptr_array_add(fnarr->data, (gpointer)data);
+				g_ptr_array_add(vhnd->footer.filenames.data, (gpointer)data);
 				//TODO: construct array of file struct
 			} else if (bite == 0x5C) {
 				//TODO: For windows, warn about forwardslashes (and any other invalid characters)
 				log_warning("An internal path string may contain backslashes.");
 			}
-			bite = 0x00;
 		}
 		guint* k;
 		k = g_malloc0(sizeof(guint));
 		log_info("Filename array created.");
-		g_ptr_array_foreach(fnarr->data, printfiles, (gpointer)k);
+		g_ptr_array_foreach(vhnd->footer.filenames.data, printfiles, (gpointer)k);
 		g_free(k);
 	} else {
 		log_message("Array is empty. (No files in volume?)");
-		fnarr->data = NULL;
+		vhnd->footer.filenames.data = NULL;
 	}
-	ret+=fnarr->header.val;
-	return ret;
+	vhnd->footer.fileprops.offset=vhnd->footer.filenames.header.val+vhnd->footer.filenames.offset+sizeof(struct header);
+	return err;
 }
 
-guint32 vol_getfileprops(VOL handle, struct volv *attrarr, const guint32 offset)
+VErrcode vol_getfileprops(VOL handle)
 {
 	struct volume* vhnd = handle;
 	log_info("Fetching file properties array.");
-	guint32 ret, os;
-	ret = os = offset;
+	guint64 os;
+	os = vhnd->footer.fileprops.offset;
 	gint i;
 	log_debug("Scraping array header.");
-	vol_getheader(handle, &attrarr->header, offset);
+	VErrcode err = vol_getheader(handle, &vhnd->footer.fileprops.header, vhnd->footer.fileprops.offset);
+	if (err)
+		return err;
 	//Header verification
-	if (memcmp("voli", attrarr->header.ident, 4)) {
+	if (memcmp("voli", vhnd->footer.fileprops.header.ident, 4)) {
 		log_critical("Array identity string not recognized.");
 	}
-	ret+=sizeof(struct header);
-	if (attrarr->header.val != 0)
+	if (vhnd->footer.fileprops.header.val != 0)
 	{
-		os = ret;
-		attrarr->data = g_array_new(FALSE, TRUE, sizeof(struct vval));
+		os +=sizeof(struct header);
+		vhnd->footer.fileprops.data = g_array_new(FALSE, TRUE, sizeof(struct vval));
 		log_debug("Fetching array data.");
-		for (i = 0; i < attrarr->header.val; i+=(sizeof(struct vval)))
+		for (i = 0; i < vhnd->footer.fileprops.header.val; i+=(sizeof(struct vval)))
 		{
 			struct vval *propset = g_malloc0(sizeof(struct vval));
 			log_debug("Pulling value set.");
-			readinto(vhnd->volio, (guint64)(os+i), (gsize)sizeof(struct vval), (gpointer)propset);
+			err = readinto(vhnd->volio, (guint64)(os+i), (gsize)sizeof(struct vval), (gpointer)propset);
+			if (err)
+				return err;
 			log_info("Values pulled:");
 			log_info("\t32-bit value 1:\t0x%x\t(unknown)", propset->field_1);
 			log_info("\t32-bit value 2:\t0x%x\t(filename array offset)", propset->field_2);
@@ -294,13 +321,12 @@ guint32 vol_getfileprops(VOL handle, struct volv *attrarr, const guint32 offset)
 			log_info("\t8-bit value:   \t0x%x\t\t(compression)", propset->endcap);
 			//TODO: Update file struct array
 			//TODO: Get VBLK headers for each file
-			g_array_append_val(attrarr->data, (*propset));
+			g_array_append_val(vhnd->footer.fileprops.data, (*propset));
 			g_free(propset);
 		}
 	} else {
 		log_message("Array is empty. (No files in volume?)");
-		attrarr->data = NULL;
+		vhnd->footer.fileprops.data = NULL;
 	}
-	ret+=attrarr->header.val;
-	return ret;
+	return err;
 }

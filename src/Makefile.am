@@ -3,7 +3,7 @@
 AM_CFLAGS := $(GLIB_CFLAGS) $(AM_FLAGS)
 
 lib_LTLIBRARIES = libdynvol.la
-libdynvol_la_SOURCES = dynvol.c util.c
+libdynvol_la_SOURCES = dynvol.c util.c err.c
 libdynvol_la_LDFLAGS = -version-info 0:2:0
 libdynvol_la_LIBADD = $(GLIB_LIBS)
 libdynvol_la_CFLAGS = -DG_LOG_DOMAIN=\"DynVol\" $(AM_CFLAGS)
