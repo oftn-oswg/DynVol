@@ -2,7 +2,9 @@
 #include "dynvol_private.h"
 #include <glib.h>
 
-VErr get_vol_error(VOL handle)
+//yeah, this function gets its own file
+
+VErr vol_get_error(VOL handle)
 {
 	VErr ret;
 	struct volume* vhnd = handle;
@@ -38,6 +40,9 @@ VErr get_vol_error(VOL handle)
 			break;
 		case VERR_READ_FAILED:
 			g_stpcpy(ret.message, "Could not read from file or stream");
+			break;
+		case VERR_CLOSE_FAILED:
+			g_stpcpy(ret.message, "Could not close the stream");
 			break;
 
 	}

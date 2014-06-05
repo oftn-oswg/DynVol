@@ -99,12 +99,4 @@ VErrcode vol_getfilenames(VOL handle);
 VErrcode vol_getfileprops(VOL handle);
 
 
-struct _v_globalstuff
-{
-	GPtrArray *errors;
-};
-
-extern struct _v_globalstuff VGlobals;
-
-
 #endif

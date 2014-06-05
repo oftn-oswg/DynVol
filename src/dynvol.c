@@ -12,8 +12,6 @@
 #include "dynvol_private.h"
 #include "util.h"
 
-//TODO: Some sort of internal error handler.
-
 VOL vol_load(const gchar* path)
 {
 	g_log_set_handler(G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_RECURSION | G_LOG_FLAG_FATAL, logfunc, NULL);
@@ -33,19 +31,24 @@ VOL vol_load(const gchar* path)
 	handle->files = NULL;
 	handle->open = FALSE;
 	handle->writable = FALSE;
+	handle->error = VERR_OK;
 	memset(&handle->header.ident, 0, sizeof(gchar[4]));
 	handle->header.val = 0;
 	memset(&handle->footer.unknown_vstr.header.ident, 0, sizeof(gchar[4]));
 	handle->footer.unknown_vstr.header.val = 0;
+	handle->footer.unknown_vstr.offset = 0;
 	handle->footer.unknown_vstr.data = NULL;
 	memset(&handle->footer.unknown_vval.header.ident, 0, sizeof(gchar[4]));
 	handle->footer.unknown_vval.header.val = 0;
+	handle->footer.unknown_vval.offset = 0;
 	handle->footer.unknown_vval.data = NULL;
 	memset(&handle->footer.filenames.header.ident, 0, sizeof(gchar[4]));
 	handle->footer.filenames.header.val = 0;
+	handle->footer.filenames.offset = 0;
 	handle->footer.filenames.data = NULL;
 	memset(&handle->footer.fileprops.header.ident, 0, sizeof(gchar[4]));
 	handle->footer.fileprops.header.val = 0;
+	handle->footer.fileprops.offset = 0;
 	handle->footer.fileprops.data = NULL;
 
 	handle->path = g_strdup(path);
@@ -55,11 +58,11 @@ VOL vol_load(const gchar* path)
 	{
 		log_critical("Volumme %s does not exist. Creation of new volumes not yet supported.", path);
 		handle->error = VERR_FILE_NOT_FOUND;
-		//return NULL;
+		return (gpointer)handle;
 	} else if (!g_file_test (path, G_FILE_TEST_IS_REGULAR)) {
 		log_error("Cannot open %s.", path);
 		handle->error = VERR_UNKNOWN;
-		//return NULL;
+		return (gpointer)handle;
 	}
 	log_debug("Attempting to open %s", path);
 	handle->volio = g_io_channel_new_file(path, "r", &error);
@@ -70,7 +73,7 @@ VOL vol_load(const gchar* path)
 	if (!handle->volio) {
 		log_error("Failed opening %s\n\t%s", path, error->message);
 		handle->error = VERR_UNKNOWN;
-		return NULL;
+		return (gpointer)handle;
 	}
 	handle->open = TRUE;
 	log_debug("Setting encoding to NULL.");
@@ -79,7 +82,7 @@ VOL vol_load(const gchar* path)
 	{
 		log_warning("Failed setting encoding for %s\n\t%s", path, error->message);
 	}
-	vol_getmetadata((gpointer)handle);
+	handle->error = vol_getmetadata((gpointer)handle);
 	//vol_parsemetadata(handle);
 	return (gpointer)handle;
 }
@@ -100,7 +103,10 @@ void vol_unload(VOL handle)
 		else
 			ret = g_io_channel_shutdown(vhnd->volio, FALSE, &error);
 		if (ret != G_IO_STATUS_NORMAL)
+		{
 			log_warning("Failed closing file.\n\t%s", error->message);
+			//vhnd->error=VERR_CLOSE_FAILED;
+		}
 		vhnd->open = FALSE;
 	}
 	log_debug("Freeing memory.");
@@ -168,7 +174,7 @@ VErrcode vol_getmetadata(VOL handle)
 		return err;
 
 	//Header verification
-	if (memcmp(" VOL", vhnd->header.ident, 4) == 0) {
+	if (memcmp((gchar[]){' ', 'V', 'O', 'L'}, vhnd->header.ident, 4) == 0) {
 		log_debug("Magic number recognized. Archive is Starsiege volume.");
 	} else if (memcmp("PVOL", vhnd->header.ident, 4) == 0) {
 		log_debug("Magic number recognized. Archive is Tribes 1 volume.");

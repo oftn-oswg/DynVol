@@ -30,6 +30,7 @@ typedef enum {
 	VERR_UNEXPECTED_EOF,
 	VERR_SEEK_FAILED,
 	VERR_READ_FAILED,
+	VERR_CLOSE_FAILED,
 	VERR_LAST //Not actually an error
 } VErrcode;
 
