@@ -11,6 +11,7 @@
 #include "dynvol.h"
 #include "dynvol_private.h"
 #include "util.h"
+#include "logging.h"
 #include "io.h"
 #include <gio/gio.h>
 
@@ -24,7 +25,7 @@ VOL vol_load(const gchar* path)
 
 	log_debug("Allocating memory for volume data container.");
 	handle=g_malloc(sizeof(struct volume));
-	//TODO: Figure out how to return errors properly in this function
+	log_todo("Figure out how to return errors from vol_load");
 
 	//initialize variables
 	handle->path = NULL;
@@ -98,7 +99,7 @@ VOL vol_load(const gchar* path)
 
 void vol_unload(VOL handle)
 {
-	//TODO: Figure out how to return errors from this func
+	log_todo("Figure out how to return errors from vol_unload");
 	struct volume* vhnd = handle;
 	log_info("Unoading volume %s.", vhnd->path);
 	GIOStatus ret = G_IO_STATUS_NORMAL;
@@ -123,7 +124,7 @@ void vol_unload(VOL handle)
 		g_free(g_array_free(vhnd->footer.unknown_vval.data, TRUE));
 	log_debug("Freeing filenames.");
 	if (vhnd->footer.filenames.data != NULL)
-		g_ptr_array_free(vhnd->footer.filenames.data, TRUE); //TODO: Figure out why this generates an error when linked symbolicly.
+		g_ptr_array_free(vhnd->footer.filenames.data, TRUE);
 	log_debug("Freeing fileprops.");
 	if (vhnd->footer.fileprops.data != NULL)
 		g_free(g_array_free(vhnd->footer.fileprops.data, TRUE));
@@ -278,9 +279,9 @@ VErrcode vol_getfilenames(VOL handle)
 				j=0;
 				log_debug("Adding string to array.");
 				g_ptr_array_add(vhnd->footer.filenames.data, (gpointer)data);
-				//TODO: construct array of file struct
+				log_todo("Construct file struct array");
 			} else if (bite == 0x5C) {
-				//TODO: For windows, warn about forwardslashes (and any other invalid characters)
+				log_todo("Warn windows users about invalid characters and forward slashes");
 				log_warning("An internal path string may contain backslashes.");
 			}
 		}
@@ -330,8 +331,8 @@ VErrcode vol_getfileprops(VOL handle)
 			log_info("\t32-bit value 3:\t0x%x\t(file VBLK offset)", propset->field_3);
 			log_info("\t32-bit value 4:\t0x%x\t(uncompressed filesize)", propset->field_4);
 			log_info("\t8-bit value:   \t0x%x\t\t(compression)", propset->endcap);
-			//TODO: Update file struct array
-			//TODO: Get VBLK headers for each file
+			log_todo("Update file struct array");
+			log_todo(" Get VBLK headers for each file");
 			g_array_append_val(vhnd->footer.fileprops.data, (*propset));
 			g_free(propset);
 		}
@@ -345,4 +346,6 @@ VErrcode vol_getfileprops(VOL handle)
 void vol_set_debug(guint mask)
 {
 	g_log_set_handler(G_LOG_DOMAIN, mask, logfunc, NULL);
+	log_todo("Set default logging level.");
+	log_todo("Potentially handle logging level per volume?");
 }

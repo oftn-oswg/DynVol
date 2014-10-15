@@ -1,9 +1,12 @@
 
 #include "dynvol.h"
-#include "util.h"
+#include "logging.h"
 #include <stdio.h>
 
-#define G_LOG_DOMAIN "test"
+#ifdef G_LOG_DOMAIN
+#undef G_LOG_DOMAIN
+#endif
+#define G_LOG_DOMAIN "vtTest"
 
 int main(int argc, char** argv) {
 	vol_levelmask = VOL_LOG_LEVEL_MASK + VOL_LOG_LEVEL_MOREDEBUG + VOL_LOG_LEVEL_FIXME + VOL_LOG_LEVEL_TODO + G_LOG_LEVEL_DEBUG + G_LOG_LEVEL_INFO;

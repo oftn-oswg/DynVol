@@ -78,6 +78,36 @@ VErr vol_get_error(VOL handle);
 void vol_set_debug(guint mask);
 
 
+/**
+ * Log levels.
+ * Use these to construct a mask to pass to vol_set_debug
+ *
+ *
+ **/
+
+enum vol_loglevels
+{
+  VOL_LOG_FLAG_RECURSION          = G_LOG_FLAG_RECURSION,
+  VOL_LOG_FLAG_FATAL              = G_LOG_FLAG_FATAL,
+
+  VOL_LOG_LEVEL_ERROR             = G_LOG_LEVEL_ERROR,
+  VOL_LOG_LEVEL_CRITICAL          = G_LOG_LEVEL_CRITICAL,
+  VOL_LOG_LEVEL_WARNING           = G_LOG_LEVEL_WARNING,
+  VOL_LOG_LEVEL_MESSAGE           = G_LOG_LEVEL_MESSAGE,
+  VOL_LOG_LEVEL_INFO              = G_LOG_LEVEL_INFO,
+  VOL_LOG_LEVEL_DEBUG             = G_LOG_LEVEL_DEBUG,
+
+  VOL_LOG_LEVEL_TODO            = 1 << 8,
+  VOL_LOG_LEVEL_FIXME           = 1 << 9,
+  VOL_LOG_LEVEL_MOREDEBUG       = 1 << 10,  //Superverbose
+
+  VOL_LOG_LEVEL_MASK = ~(VOL_LOG_LEVEL_MOREDEBUG | VOL_LOG_LEVEL_TODO | VOL_LOG_LEVEL_FIXME | VOL_LOG_LEVEL_DEBUG | VOL_LOG_LEVEL_INFO)
+};
+
+
+
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -8,6 +8,7 @@
 
 #include <string.h>
 #include "util.h"
+#include "logging.h"
 #include "io.h"
 #include "dynvol.h"
 #include "dynvol_private.h"
@@ -51,7 +52,7 @@ VErrcode readbyte(struct volio *volio, const goffset offset, guint8 *byte)
 		log_message("Reached end of stream. Read %lu bytes.", rd);
 	} else {
 		//log_moredebug("Read %lu bytes.", rd);
-		//Doesn't print proper number for some reason...
+		log_fixme("Read function does not return proper number of bytes read.");
 	}
 	return VERR_OK;
 }
@@ -80,7 +81,7 @@ VErrcode readinto(struct volio *volio, const goffset offset, const gsize size, g
 		log_message("Reached end of stream. Read %lu bytes.", rd);
 	} else {
 		//log_moredebug("Read %lu bytes.", rd);
-		//Doesn't print proper number for some reason...
+		log_fixme("Read function does not return proper number of bytes read.");
 	}
 	return VERR_OK;
 }

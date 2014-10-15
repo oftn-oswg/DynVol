@@ -1,9 +1,12 @@
 
 #include "dynvol.h"
-#include "util.h"
+#include "logging.h"
 #include <stdio.h>
 #include <glib.h>
 
+#ifdef G_LOG_DOMAIN
+#undef G_LOG_DOMAIN
+#endif
 #define G_LOG_DOMAIN "vtList"
 
 int printhelp()
