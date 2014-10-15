@@ -20,7 +20,7 @@ gchar* readpart(struct volio *volio, const goffset offset, const guint64 bytes)
 	//(or just don't use it...)
 
 	gchar* ret;
-	log_debug("Allocating memory...");
+	log_moredebug("Allocating memory...");
 	ret = g_malloc0(sizeof(gchar)*bytes);
 	readinto(volio, offset, bytes, (gpointer)ret);
 	return ret;
@@ -28,20 +28,17 @@ gchar* readpart(struct volio *volio, const goffset offset, const guint64 bytes)
 
 VErrcode readbyte(struct volio *volio, const goffset offset, guint8 *byte)
 {
-	//log_debug("Reading byte at offset 0x%lx.", offset);
-	//Needs superverbose debug
+	log_moredebug("Reading byte at offset 0x%lx.", offset);
 	(*byte) = 0x00;
 	guint64 rd;
 	GError *error = NULL;
-	//log_debug("Seeking...");
-	//Needs superverbose debug
+	log_moredebug("Seeking...");
 	if (!g_seekable_seek(volio->readstream, offset, G_SEEK_SET, NULL, &error))
 	{
 		log_critical("Seek failed:\t%s", error->message);
 		return VERR_SEEK_FAILED;
 	}
-	//log_debug("Reading...");
-	//Needs superverbose debug
+	log_moredebug("Reading...");
 	if(!g_input_stream_read_all(volio->readstream, byte, (gsize)sizeof(guint8), &rd, NULL, &error))
 	{
 		log_critical("Could not read from stream:\t%s", error->message);
@@ -53,9 +50,8 @@ VErrcode readbyte(struct volio *volio, const goffset offset, guint8 *byte)
 	} else if (rd =! (gsize)sizeof(guint8)) {
 		log_message("Reached end of stream. Read %lu bytes.", rd);
 	} else {
-		//log_debug("Read %lu bytes.", rd);
+		//log_moredebug("Read %lu bytes.", rd);
 		//Doesn't print proper number for some reason...
-	    //Needs superverbose debug
 	}
 	return VERR_OK;
 }
@@ -65,13 +61,13 @@ VErrcode readinto(struct volio *volio, const goffset offset, const gsize size, g
 	log_debug("Reading %lu bytes at offset 0x%lx.", size, offset);
 	guint64 rd;
 	GError *error = NULL;
-	log_debug("Seeking...");
+	log_moredebug("Seeking...");
 	if (!g_seekable_seek(volio->readstream, offset, G_SEEK_SET, NULL, &error))
 	{
 		log_critical("Seek failed:\t%s", error->message);
 		return VERR_SEEK_FAILED;
 	}
-	log_debug("Reading...");
+	log_moredebug("Reading...");
 	if(!g_input_stream_read_all(volio->readstream, container, size, &rd, NULL, &error))
 	{
 		log_critical("Could not read from stream:\t%s", error->message);
@@ -83,7 +79,7 @@ VErrcode readinto(struct volio *volio, const goffset offset, const gsize size, g
 	} else if (rd =! size) {
 		log_message("Reached end of stream. Read %lu bytes.", rd);
 	} else {
-		//log_debug("Read %lu bytes.", rd);
+		//log_moredebug("Read %lu bytes.", rd);
 		//Doesn't print proper number for some reason...
 	}
 	return VERR_OK;

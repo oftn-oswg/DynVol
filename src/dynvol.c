@@ -16,7 +16,6 @@
 
 VOL vol_load(const gchar* path)
 {
-	g_log_set_handler(G_LOG_DOMAIN, G_LOG_LEVEL_MASK | G_LOG_FLAG_RECURSION | G_LOG_FLAG_FATAL, logfunc, NULL);
 	GError *error = NULL;
 	GIOStatus ret = G_IO_STATUS_NORMAL;
 	struct volume* handle;
@@ -341,4 +340,9 @@ VErrcode vol_getfileprops(VOL handle)
 		vhnd->footer.fileprops.data = NULL;
 	}
 	return err;
+}
+
+void vol_set_debug(guint mask)
+{
+	g_log_set_handler(G_LOG_DOMAIN, mask, logfunc, NULL);
 }

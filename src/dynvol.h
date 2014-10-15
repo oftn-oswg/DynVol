@@ -75,6 +75,9 @@ void vol_unload(VOL handle);
 VErr vol_get_error(VOL handle);
 
 
+void vol_set_debug(guint mask);
+
+
 #ifdef __cplusplus
 }
 #endif

@@ -51,50 +51,101 @@ g_info (const gchar *format,
 #endif
 #endif
 
+//This adds a few new logging levels
+enum vol_loglevels
+{
+  VOL_LOG_FLAG_RECURSION          = G_LOG_FLAG_RECURSION,
+  VOL_LOG_FLAG_FATAL              = G_LOG_FLAG_FATAL,
+
+  VOL_LOG_LEVEL_ERROR             = G_LOG_LEVEL_ERROR,
+  VOL_LOG_LEVEL_CRITICAL          = G_LOG_LEVEL_CRITICAL,
+  VOL_LOG_LEVEL_WARNING           = G_LOG_LEVEL_WARNING,
+  VOL_LOG_LEVEL_MESSAGE           = G_LOG_LEVEL_MESSAGE,
+  VOL_LOG_LEVEL_INFO              = G_LOG_LEVEL_INFO,
+  VOL_LOG_LEVEL_DEBUG             = G_LOG_LEVEL_DEBUG,
+
+  VOL_LOG_LEVEL_TODO            = 1 << 8,
+  VOL_LOG_LEVEL_FIXME           = 1 << 9,
+  VOL_LOG_LEVEL_MOREDEBUG       = 1 << 10,  //Superverbose
+
+  VOL_LOG_LEVEL_MASK = ~(VOL_LOG_LEVEL_MOREDEBUG | VOL_LOG_LEVEL_TODO | VOL_LOG_LEVEL_FIXME | G_LOG_LEVEL_DEBUG | G_LOG_LEVEL_INFO)
+};
+
+guint vol_levelmask;
 
 //This makes inlusion of line-dependant "macros" easier.
 #define log_error(args...) \
-           do { gchar *linestr, *logstr, *fullstr; \
-           	linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
-           	logstr  = g_strdup_printf(args); \
-           	fullstr = g_strconcat(linestr, logstr, NULL); \
-           	g_error("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr); \
-           } while(0)
+           do { if (vol_levelmask & VOL_LOG_LEVEL_ERROR) { \
+             gchar *linestr, *logstr, *fullstr; \
+           	 linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
+           	 logstr  = g_strdup_printf(args); \
+           	 fullstr = g_strconcat(linestr, logstr, NULL); \
+           	 g_error("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr); \
+           } } while(0)
 #define log_critical(args...) \
-           do { gchar *linestr, *logstr, *fullstr; \
-           	linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
-           	logstr  = g_strdup_printf(args); \
-           	fullstr = g_strconcat(linestr, logstr, NULL); \
-           	g_critical("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr);\
-           } while(0)
+           do { if (vol_levelmask & VOL_LOG_LEVEL_CRITICAL) { \
+             gchar *linestr, *logstr, *fullstr; \
+           	 linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
+           	 logstr  = g_strdup_printf(args); \
+           	 fullstr = g_strconcat(linestr, logstr, NULL); \
+           	 g_critical("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr);\
+           } } while(0)
 #define log_warning(args...) \
-           do { gchar *linestr, *logstr, *fullstr; \
-           	linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
-           	logstr  = g_strdup_printf(args); \
-           	fullstr = g_strconcat(linestr, logstr, NULL); \
-           	g_warning("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr);\
-           } while(0)
+           do { if (vol_levelmask & VOL_LOG_LEVEL_WARNING) { \
+             gchar *linestr, *logstr, *fullstr; \
+           	 linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
+           	 logstr  = g_strdup_printf(args); \
+           	 fullstr = g_strconcat(linestr, logstr, NULL); \
+           	 g_warning("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr);\
+           } } while(0)
 #define log_message(args...) \
-           do { gchar *linestr, *logstr, *fullstr; \
-           	linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
-           	logstr  = g_strdup_printf(args); \
-           	fullstr = g_strconcat(linestr, logstr, NULL); \
-           	g_message("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr); \
-           } while(0)
+           do { if (vol_levelmask & VOL_LOG_LEVEL_MESSAGE) { \
+             gchar *linestr, *logstr, *fullstr; \
+           	 linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
+           	 logstr  = g_strdup_printf(args); \
+           	 fullstr = g_strconcat(linestr, logstr, NULL); \
+           	 g_message("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr); \
+           } } while(0)
 #define log_info(args...) \
-           do { gchar *linestr, *logstr, *fullstr; \
+           do { if (vol_levelmask & VOL_LOG_LEVEL_INFO) { \
+            gchar *linestr, *logstr, *fullstr; \
            	linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
            	logstr  = g_strdup_printf(args); \
            	fullstr = g_strconcat(linestr, logstr, NULL); \
            	g_info("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr);\
-           } while(0)
+           } } while(0)
 #define log_debug(args...) \
-           do { gchar *linestr, *logstr, *fullstr; \
+           do { if (vol_levelmask & VOL_LOG_LEVEL_DEBUG) { \
+            gchar *linestr, *logstr, *fullstr; \
            	linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
            	logstr  = g_strdup_printf(args); \
            	fullstr = g_strconcat(linestr, logstr, NULL); \
            	g_debug("%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr);\
-           } while(0)
+           } } while(0)
+#define log_todo(args...) \
+           do { if (vol_levelmask & VOL_LOG_LEVEL_TODO) { \
+            gchar *linestr, *logstr, *fullstr; \
+            linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
+            logstr  = g_strdup_printf(args); \
+            fullstr = g_strconcat(linestr, logstr, NULL); \
+            g_log(G_LOG_DOMAIN, VOL_LOG_LEVEL_TODO, "%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr);\
+           } } while(0)
+#define log_fixme(args...) \
+           do { if (vol_levelmask & VOL_LOG_LEVEL_FIXME) { \
+            gchar *linestr, *logstr, *fullstr; \
+            linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
+            logstr  = g_strdup_printf(args); \
+            fullstr = g_strconcat(linestr, logstr, NULL); \
+            g_log(G_LOG_DOMAIN, VOL_LOG_LEVEL_FIXME, "%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr);\
+           } } while(0)
+#define log_moredebug(args...) \
+           do { if (vol_levelmask & VOL_LOG_LEVEL_MOREDEBUG) { \
+            gchar *linestr, *logstr, *fullstr; \
+            linestr = g_strdup_printf(__FILE__ ":%d %s  ", __LINE__, __PRETTY_FUNCTION__); \
+            logstr  = g_strdup_printf(args); \
+            fullstr = g_strconcat(linestr, logstr, NULL); \
+            g_log(G_LOG_DOMAIN, VOL_LOG_LEVEL_MOREDEBUG, "%s", fullstr); g_free(linestr); g_free(logstr); g_free(fullstr);\
+           } } while(0)
 
 //This is our actual log function
 void logfunc (const gchar *domain, GLogLevelFlags level, const gchar *message, gpointer misc);

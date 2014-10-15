@@ -13,9 +13,11 @@ bin_PROGRAMS = test test_static
 
 test_SOURCES = test.c
 test_LDADD = libdynvol.la $(GLIB_LIBS) $(GIO_LIBS)
+test_CFLAGS = $(AM_CFLAGS)
 
 test_static_SOURCES = test.c
 test_static_LDADD = libdynvol.la $(GLIB_LIBS) $(GIO_LIBS)
 test_static_LDFLAGS = -static
+test_static_CFLAGS = $(AM_CFLAGS)
 
 MAINTAINERCLEANFILES = Makefile.in Makefile
