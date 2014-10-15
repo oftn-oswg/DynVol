@@ -12,13 +12,13 @@
 
 int printhelp()
 {
-	g_print("Usage:");
-	g_print("    vtList [options] expression file [file] [file]");
-	g_print("Where:");
-	g_print("    expression is a filter for the returned file list. * and ? work.");
-	g_print("    file matches the volumes whose contents you want to list.\n");
-	g_print("Options:");
-	g_print("    -v      Increase verbosity. Can be specified up to five times.\n");
+	g_print("Usage:\n");
+	g_print("    vtList [options] expression file [file] [file]\n");
+	g_print("Where:\n");
+	g_print("    expression is a filter for the returned file list. * and ? work.\n");
+	g_print("    file matches the volumes whose contents you want to list.\n\n");
+	g_print("Options:\n");
+	g_print("    -v      Increase verbosity. Can be specified up to five times.\n\n");
 
 }
 
