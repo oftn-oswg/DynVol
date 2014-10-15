@@ -102,14 +102,4 @@ void logfunc (const gchar *domain, GLogLevelFlags level, const gchar *message, g
 //This is for string arrays
 void printfiles(gpointer name, gpointer count);
 
-
-
-//IO stuff
-
-//Should be g_free()'d when done
-gchar* readpart(GIOChannel *stream, const guint64 offset, const guint64 bytes);
-
-VErrcode readbyte(GIOChannel *stream, const guint64 offset, guint8 *byte);
-VErrcode readinto(GIOChannel *stream, const guint64 offset, const gsize size, gpointer container);
-
 #endif

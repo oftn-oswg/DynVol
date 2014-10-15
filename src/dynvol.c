@@ -11,6 +11,7 @@
 #include "dynvol.h"
 #include "dynvol_private.h"
 #include "util.h"
+#include "io.h"
 
 VOL vol_load(const gchar* path)
 {
