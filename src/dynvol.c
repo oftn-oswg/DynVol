@@ -12,6 +12,7 @@
 #include "dynvol_private.h"
 #include "util.h"
 #include "io.h"
+#include <gio/gio.h>
 
 VOL vol_load(const gchar* path)
 {
@@ -28,7 +29,8 @@ VOL vol_load(const gchar* path)
 
 	//initialize variables
 	handle->path = NULL;
-	handle->volio = NULL;
+	handle->volio.identifier = NULL;
+	handle->volio.readstream = NULL;
 	handle->files = NULL;
 	handle->open = FALSE;
 	handle->writable = FALSE;
@@ -66,23 +68,29 @@ VOL vol_load(const gchar* path)
 		return (gpointer)handle;
 	}
 	log_debug("Attempting to open %s", path);
-	handle->volio = g_io_channel_new_file(path, "r", &error);
+
 	//Just to be safe, we will only open the file for writing when we're actually writing to it.
 	//I found out the hard way if you screw something up just right while the file is open for writing, bad things happen.
 	//We don't want bad things to happen.
 	//This archive format is broken enough as it is...
-	if (!handle->volio) {
+
+	handle->volio.identifier = g_file_new_for_path(path);
+	handle->volio.readstream = g_file_read(handle->volio.identifier, NULL, &error);
+	if (!handle->volio.readstream) {
 		log_error("Failed opening %s\n\t%s", path, error->message);
 		handle->error = VERR_UNKNOWN;
 		return (gpointer)handle;
 	}
 	handle->open = TRUE;
-	log_debug("Setting encoding to NULL.");
+
+	//Code left over from using glib gio
+	/* log_debug("Setting encoding to NULL.");
 	ret = g_io_channel_set_encoding(handle->volio, NULL, &error);
 	if (ret != G_IO_STATUS_NORMAL)
 	{
 		log_warning("Failed setting encoding for %s\n\t%s", path, error->message);
-	}
+	} */
+
 	handle->error = vol_getmetadata((gpointer)handle);
 	//vol_parsemetadata(handle);
 	return (gpointer)handle;
@@ -96,20 +104,17 @@ void vol_unload(VOL handle)
 	log_info("Unoading volume %s.", vhnd->path);
 	GIOStatus ret = G_IO_STATUS_NORMAL;
 	GError *error = NULL;
-	if (vhnd->open)
+
+	if (!(g_input_stream_close(vhnd->volio.readstream, NULL, &error)))
 	{
-		log_debug("Closing file.");
-		if (vhnd->writable)
-			ret = g_io_channel_shutdown(vhnd->volio, TRUE, &error);
-		else
-			ret = g_io_channel_shutdown(vhnd->volio, FALSE, &error);
-		if (ret != G_IO_STATUS_NORMAL)
-		{
-			log_warning("Failed closing file.\n\t%s", error->message);
-			//vhnd->error=VERR_CLOSE_FAILED;
-		}
-		vhnd->open = FALSE;
+		log_critical("Couldn't close input stream:\t%s", error->message);
 	}
+
+	log_debug("Freeing readstream");
+	g_object_unref(vhnd->volio.readstream);
+	log_debug("Freeing file identifier");
+	g_object_unref(vhnd->volio.identifier);
+
 	log_debug("Freeing memory.");
 	log_debug("Freeing unknown_vstr.");
 	if (vhnd->footer.unknown_vstr.data != NULL)
@@ -137,7 +142,7 @@ VErrcode vol_getheader(VOL handle, struct header *header, const guint32 offset)
 {
 	struct volume* vhnd = handle;
 	log_info("Fetching header");
-	VErrcode err = readinto(vhnd->volio, offset, (gsize)sizeof(struct header), (gpointer)header);
+	VErrcode err = readinto(&vhnd->volio, offset, (gsize)sizeof(struct header), (gpointer)header);
 	log_debug("Got header:");
 	log_debug("\tIDstring: %c%c%c%c", header->ident[0], header->ident[1], header->ident[2], header->ident[3]);
 	log_debug("\tValue: 0x%x", header->val);
@@ -261,13 +266,13 @@ VErrcode vol_getfilenames(VOL handle)
 			if (j == 0)
 				log_debug("Seeking to end of string.");
 			j++;
-			readbyte(vhnd->volio, (guint64)(os+j), &bite);
+			readbyte(&vhnd->volio, (guint64)(os+j), &bite);
 			if (bite == 0x00)
 			{
 				j++;
 				log_debug("String at offset 0x%lx indexed. Size is %d. Pulling now.", os, j);
 				gchar *data;
-				data = readpart(vhnd->volio, (guint64)os, sizeof(gchar)*j);
+				data = readpart(&vhnd->volio, (guint64)os, sizeof(gchar)*j);
 				log_debug("Pulled string: %s.", data);
 				i++;
 				os+=j;
@@ -317,7 +322,7 @@ VErrcode vol_getfileprops(VOL handle)
 		{
 			struct vval *propset = g_malloc0(sizeof(struct vval));
 			log_debug("Pulling value set.");
-			err = readinto(vhnd->volio, (guint64)(os+i), (gsize)sizeof(struct vval), (gpointer)propset);
+			err = readinto(&vhnd->volio, (guint64)(os+i), (gsize)sizeof(struct vval), (gpointer)propset);
 			if (err)
 				return err;
 			log_info("Values pulled:");

@@ -12,8 +12,9 @@
 #include "dynvol.h"
 #include "dynvol_private.h"
 #include <glib.h>
+#include <gio/gio.h>
 
-gchar* readpart(GIOChannel *stream, const guint64 offset, const guint64 bytes)
+gchar* readpart(struct volio *volio, const goffset offset, const guint64 bytes)
 {
 	//rework this to return an error somehow
 	//(or just don't use it...)
@@ -21,75 +22,69 @@ gchar* readpart(GIOChannel *stream, const guint64 offset, const guint64 bytes)
 	gchar* ret;
 	log_debug("Allocating memory...");
 	ret = g_malloc0(sizeof(gchar)*bytes);
-	readinto(stream, offset, bytes, (gpointer)ret);
+	readinto(volio, offset, bytes, (gpointer)ret);
 	return ret;
 }
 
-VErrcode readbyte(GIOChannel *stream, const guint64 offset, guint8 *byte)
+VErrcode readbyte(struct volio *volio, const goffset offset, guint8 *byte)
 {
 	//log_debug("Reading byte at offset 0x%lx.", offset);
 	//Needs superverbose debug
 	(*byte) = 0x00;
 	guint64 rd;
 	GError *error = NULL;
-	GIOStatus opstat = G_IO_STATUS_NORMAL;
 	//log_debug("Seeking...");
 	//Needs superverbose debug
-	while ((opstat = g_io_channel_seek_position(stream, offset, G_SEEK_SET, &error)) == G_IO_STATUS_AGAIN)
-		log_message("Resource unavaliable! Will retry.");
-	if (opstat == G_IO_STATUS_EOF)
+	if (!g_seekable_seek(volio->readstream, offset, G_SEEK_SET, NULL, &error))
 	{
-		log_critical("Stream ends before offset 0x%lx.", offset);
-		return VERR_UNEXPECTED_EOF;
-	} else if (opstat != G_IO_STATUS_NORMAL) {
 		log_critical("Seek failed:\t%s", error->message);
 		return VERR_SEEK_FAILED;
 	}
 	//log_debug("Reading...");
 	//Needs superverbose debug
-	while ((opstat = g_io_channel_read_chars(stream, byte, (gsize)sizeof(guint8), &rd, &error)) == G_IO_STATUS_AGAIN)
-		log_message("Resource unavaliable! Will retry.");
-	if (opstat == G_IO_STATUS_EOF)
+	if(!g_input_stream_read_all(volio->readstream, byte, (gsize)sizeof(guint8), &rd, NULL, &error))
 	{
-		log_message("Reached end of stream. Read %lu bytes.", rd);
-	} else if (opstat != G_IO_STATUS_NORMAL) {
 		log_critical("Could not read from stream:\t%s", error->message);
+		log_debug("Read %lu bytes before error.", rd);
 		return VERR_READ_FAILED;
-	//} else {
-	//	log_debug("Read %lu bytes.", rd);
-	//Needs superverbose debug
+	} else if (rd == 0) {
+		log_critical("Stream has already ended. offset 0x%lx not reached.", offset);
+		return VERR_UNEXPECTED_EOF;
+	} else if (rd =! (gsize)sizeof(guint8)) {
+		log_message("Reached end of stream. Read %lu bytes.", rd);
+	} else {
+		//log_debug("Read %lu bytes.", rd);
+		//Doesn't print proper number for some reason...
+	    //Needs superverbose debug
 	}
 	return VERR_OK;
 }
 
-VErrcode readinto(GIOChannel *stream, const guint64 offset, const gsize size, gpointer container)
+VErrcode readinto(struct volio *volio, const goffset offset, const gsize size, gpointer container)
 {
 	log_debug("Reading %lu bytes at offset 0x%lx.", size, offset);
 	guint64 rd;
 	GError *error = NULL;
-	GIOStatus opstat = G_IO_STATUS_NORMAL;
 	log_debug("Seeking...");
-	while ((opstat = g_io_channel_seek_position(stream, offset, G_SEEK_SET, &error)) == G_IO_STATUS_AGAIN)
-		log_message("Resource unavaliable! Will retry.");
-	if (opstat == G_IO_STATUS_EOF)
+	if (!g_seekable_seek(volio->readstream, offset, G_SEEK_SET, NULL, &error))
 	{
-		log_critical("Stream ends before offset 0x%lx.", offset);
-		return VERR_UNEXPECTED_EOF;
-	} else if (opstat != G_IO_STATUS_NORMAL) {
 		log_critical("Seek failed:\t%s", error->message);
 		return VERR_SEEK_FAILED;
 	}
 	log_debug("Reading...");
-	while ((opstat = g_io_channel_read_chars(stream, (gchar*)container, size, &rd, &error)) == G_IO_STATUS_AGAIN)
-		log_message("Resource unavaliable! Will retry.");
-	if (opstat == G_IO_STATUS_EOF)
+	if(!g_input_stream_read_all(volio->readstream, container, size, &rd, NULL, &error))
 	{
-		log_message("Reached end of stream. Read %lu bytes.", rd);
-	} else if (opstat != G_IO_STATUS_NORMAL) {
 		log_critical("Could not read from stream:\t%s", error->message);
+		log_debug("Read %lu bytes before error.", rd);
 		return VERR_READ_FAILED;
+	} else if (rd == 0) {
+		log_critical("Stream has already ended. offset 0x%lx not reached.", offset);
+		return VERR_UNEXPECTED_EOF;
+	} else if (rd =! size) {
+		log_message("Reached end of stream. Read %lu bytes.", rd);
 	} else {
-		log_debug("Read %lu bytes.", rd);
+		//log_debug("Read %lu bytes.", rd);
+		//Doesn't print proper number for some reason...
 	}
 	return VERR_OK;
 }

@@ -18,6 +18,9 @@ LT_INIT(disable-fast-install shared static)
 PKG_CHECK_MODULES([GLIB], [glib-2.0 >=  2.32.0])
 AC_SUBST(GLIB_CFLAGS)
 AC_SUBST(GLIB_LIBS)
+PKG_CHECK_MODULES([GIO], [gio-2.0])
+AC_SUBST(GIO_CFLAGS)
+AC_SUBST(GIO_LIBS)
 
 
 # Checks for header files.

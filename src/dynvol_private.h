@@ -10,6 +10,7 @@
 #define __DYNVOL_PRIVATE_H__
 
 #include <glib.h>
+#include <gio/gio.h>
 #include "dynvol.h"
 
 struct __attribute__((__packed__)) header
@@ -66,12 +67,18 @@ struct __attribute__((__packed__)) footer
 	struct volv fileprops;
 };
 
+struct __attribute__((__packed__)) volio
+{
+	GFile *identifier;
+	GFileInputStream *readstream;
+};
+
 
 //This is VOL on the outside.
 struct __attribute__((__packed__)) volume
 {
 	gchar *path;
-	GIOChannel *volio;
+	struct volio volio;
 	GArray *files;
 	gboolean open;
 	gboolean writable;

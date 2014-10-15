@@ -15,9 +15,9 @@
 //IO stuff
 
 //Should be g_free()'d when done
-gchar* readpart(GIOChannel *stream, const guint64 offset, const guint64 bytes);
+gchar* readpart(struct volio *volio, const goffset offset, const guint64 bytes);
 
-VErrcode readbyte(GIOChannel *stream, const guint64 offset, guint8 *byte);
-VErrcode readinto(GIOChannel *stream, const guint64 offset, const gsize size, gpointer container);
+VErrcode readbyte(struct volio *volio, const goffset offset, guint8 *byte);
+VErrcode readinto(struct volio *volio, const goffset offset, const gsize size, gpointer container);
 
 #endif
