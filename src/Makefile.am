@@ -9,7 +9,7 @@ libdynvol_la_LIBADD = $(GLIB_LIBS) $(GIO_LIBS)
 libdynvol_la_CFLAGS = -DG_LOG_DOMAIN=\"DynVol\" $(AM_CFLAGS)
 include_HEADERS = dynvol.h
 
-bin_PROGRAMS = test test_static
+bin_PROGRAMS = test test_static vtList
 
 test_SOURCES = test.c
 test_LDADD = libdynvol.la $(GLIB_LIBS) $(GIO_LIBS)
@@ -19,5 +19,9 @@ test_static_SOURCES = test.c
 test_static_LDADD = libdynvol.la $(GLIB_LIBS) $(GIO_LIBS)
 test_static_LDFLAGS = -static
 test_static_CFLAGS = $(AM_CFLAGS)
+
+vtList_SOURCES = vtList.c util.c
+vtList_LDADD = libdynvol.la $(GLIB_LIBS)
+vtList_CFLAGS = $(AM_CFLAGS)
 
 MAINTAINERCLEANFILES = Makefile.in Makefile
