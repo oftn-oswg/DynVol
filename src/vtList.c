@@ -3,6 +3,7 @@
 #include "logging.h"
 #include <stdio.h>
 #include <glib.h>
+#include <unistd.h>
 
 #ifdef G_LOG_DOMAIN
 #undef G_LOG_DOMAIN
@@ -26,12 +27,42 @@ int main(int argc, char** argv)
 	vol_levelmask = VOL_LOG_LEVEL_MASK;
 	guint i, exprarg = 0, filesarg = 0;
 	guint vcount = 0;
+	gchar a;
+	gchar *expr;
 	VOL volhandle;
+	GPtrArray *volpaths =  g_ptr_array_new_with_free_func(g_free);
 	g_log_set_handler(G_LOG_DOMAIN, vol_levelmask, logfunc, NULL);
 	if (argc < 3) {
 		printhelp();
 	}
-	for (i = 0; i < argc; i++)
+
+	while((a = getopt(argc, argv, "v")) != -1)
+	{
+		switch(a)
+		{
+			case 'v':
+				vcount++;
+				g_print("-v detected\n");
+				break;
+			default:
+				g_print("Problem with argument parsing. Got unexpected result %c\n", a);
+		}
+	}
+
+	if (argc < optind + 2) {
+		printhelp();
+	}
+
+	expr = argv[optind];
+	g_print("Internal file blob: %s\n", expr);
+
+	for (i = optind + 1; i < argc; i++)
+	{
+		g_print("External file blob: %s\n", argv[i]);
+		g_ptr_array_add(volpaths, (gpointer)argv[i]);
+	}
+
+	/*for (i = 0; i < argc; i++)
 	{
 		g_print("arg %d is %s\n", i, argv[i]);
 		if (!g_strcmp0(argv[i], "-v"))
@@ -52,7 +83,7 @@ int main(int argc, char** argv)
 		} else if (filesarg == 0) {
 			filesarg = i;
 		}
-	}
+	}*/
 	if (vcount > 4)
 		vcount = 4;
 	g_print("%x\n", vol_levelmask);
