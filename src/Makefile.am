@@ -15,7 +15,7 @@ test_SOURCES = test.c
 test_LDADD = libdynvol.la $(GLIB_LIBS) $(GIO_LIBS)
 
 test_static_SOURCES = test.c
-test_static_LDADD = libdynvol.la -lglib $(GLIB_LIBS) $(GIO_LIBS)
+test_static_LDADD = libdynvol.la $(GLIB_LIBS) $(GIO_LIBS)
 test_static_LDFLAGS = -static
 
 MAINTAINERCLEANFILES = Makefile.in Makefile
