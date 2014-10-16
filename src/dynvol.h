@@ -75,6 +75,20 @@ void vol_unload(VOL handle);
 VErr vol_get_error(VOL handle);
 
 
+struct volfilelist {
+	guint len;
+	gchar** filelist;
+};
+
+/**
+ * vol_get_filelist
+ * @handle: A volume handle as returned by vol_load
+ *
+ * Returns a volfilenames struct containing the filenames within the volume.
+ **/
+struct volfilelist vol_get_filelist(VOL handle);
+
+
 void vol_set_debug(guint mask);
 
 

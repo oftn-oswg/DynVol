@@ -343,6 +343,21 @@ VErrcode vol_getfileprops(VOL handle)
 	return err;
 }
 
+struct volfilelist vol_get_filelist(VOL handle)
+{
+	struct volume* vhnd = handle;
+	struct volfilelist filelist;
+	guint i;
+	gchar *filename;
+	filelist.filelist = g_malloc(vhnd->footer.filenames.data->len * sizeof(gchar*));
+	filelist.len = vhnd->footer.filenames.data->len;
+	for(i = 0; i < vhnd->footer.filenames.data->len; i++)
+	{
+		filelist.filelist[i] = g_strdup((gchar*)g_ptr_array_index(vhnd->footer.filenames.data,i));
+	}
+	return filelist;
+}
+
 void vol_set_debug(guint mask)
 {
 	g_log_set_handler(G_LOG_DOMAIN, mask, logfunc, NULL);

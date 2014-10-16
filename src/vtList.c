@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <glib.h>
 #include <unistd.h>
+#include <string.h>
 
 #ifdef G_LOG_DOMAIN
 #undef G_LOG_DOMAIN
@@ -25,12 +26,14 @@ int printhelp()
 int main(int argc, char** argv)
 {
 	vol_levelmask = VOL_LOG_LEVEL_MASK;
-	guint i, exprarg = 0, filesarg = 0;
-	guint vcount = 0;
+	guint i, j;
 	gchar a;
-	gchar *expr;
+	guint vcount = 0;
+	gchar *expr, *volname;
 	VOL volhandle;
+	GPatternSpec *internalglob;
 	GPtrArray *volpaths =  g_ptr_array_new_with_free_func(g_free);
+	struct volfilelist vfiles;
 	g_log_set_handler(G_LOG_DOMAIN, vol_levelmask, logfunc, NULL);
 	if (argc < 3) {
 		printhelp();
@@ -54,64 +57,61 @@ int main(int argc, char** argv)
 	}
 
 	expr = argv[optind];
-	g_print("Internal file blob: %s\n", expr);
 
 	for (i = optind + 1; i < argc; i++)
 	{
-		g_print("External file blob: %s\n", argv[i]);
+		//We're going to skip handling of external blobs for now.
 		g_ptr_array_add(volpaths, (gpointer)argv[i]);
 	}
 
-	/*for (i = 0; i < argc; i++)
-	{
-		g_print("arg %d is %s\n", i, argv[i]);
-		if (!g_strcmp0(argv[i], "-v"))
-		{
-			vcount++;
-			g_print("-v detected\n");
-		} else if (!g_strcmp0(argv[i], "-vv")) {
-			vcount+=2;
-			g_print("-vv detected\n");
-		} else if (!g_strcmp0(argv[i], "-vvv")) {
-			vcount+=3;
-			g_print("-vvv detected\n");
-		} else if (!g_strcmp0(argv[i], "-vvvv")) {
-			vcount+=4;
-			g_print("-vvvv detected\n");
-		} else if (exprarg == 0) {
-			exprarg = i;
-		} else if (filesarg == 0) {
-			filesarg = i;
-		}
-	}*/
 	if (vcount > 4)
 		vcount = 4;
-	g_print("%x\n", vol_levelmask);
 	switch(vcount)
 	{
 		case 4:
 			vol_levelmask |= VOL_LOG_LEVEL_MOREDEBUG;
-			g_print("%x\n", vol_levelmask);
 		case 3:
 			vol_levelmask |= (VOL_LOG_LEVEL_FIXME + VOL_LOG_LEVEL_TODO);
-			g_print("%x\n", vol_levelmask);
 		case 2:
 			vol_levelmask |= G_LOG_LEVEL_DEBUG;
-			g_print("%x\n", vol_levelmask);
 		case 1:
 			vol_levelmask |= G_LOG_LEVEL_INFO;
-			g_print("%x\n", vol_levelmask);
 	}
 	g_log_set_handler(G_LOG_DOMAIN, vol_levelmask, logfunc, NULL);
 	vol_set_debug(vol_levelmask);
 
-	//volhandle = vol_load()
-	//TODO: Get rid of all these print statements
-	//TODO: Get blob from args, store in string
-	//TODO: Get vols from args, store in some sort of array or list
-	//TODO: Get file lists from vols
-	//TODO: Match blob against file lists
-	//TODO: Return filtered file lists
+	g_debug("Entering for loop");
+	for(i = 0; i < volpaths->len; i++)
+	{
+		g_debug("Getting file list for %s\n", (gchar*)g_ptr_array_index(volpaths,i));
+		volhandle = vol_load((gchar*)g_ptr_array_index(volpaths,i));
+		VErr err = vol_get_error(volhandle);
+		if (err.code != 0)
+		{
+			for (j = 0; j < 128; j++)
+			{
+				if (err.message[j] == 0x00)
+					break;
+				else
+					g_print("%c", err.message[j]);
+			}
+			g_print("\n");
+			break;
+		} else {
+			volname = g_strdup((gchar*)g_ptr_array_index(volpaths,i));
+			g_print("%s\n", (gchar*)basename(volname));
+			g_free(volname);
+			vfiles = vol_get_filelist(volhandle);
+			internalglob = g_pattern_spec_new(expr);
+			for (j = 0; j < vfiles.len; j++)
+			{
+				if (g_pattern_match_string(internalglob, vfiles.filelist[j]))
+					g_print("  %s\n", vfiles.filelist[j]);
+				g_free(vfiles.filelist[j]);
+			}
+		}
+		vol_unload(volhandle);
+	}
 
 	return 0;
 }
