@@ -154,6 +154,17 @@ VErrcode vol_getfooter(VOL handle)
 	struct volume* vhnd = handle;
 	log_info("Fetching volume footer.");
 	vhnd->footer.unknown_vstr.offset = vhnd->header.val;
+	// In some cases the header values point to the end of their array, rather than at the beginning
+	// of the next array.
+	// Since headers are 4-byte aligned inside the volume file, we can ensure that our offsets are
+	// also multiples of four.
+	// By rounding our offsets /up/ to the nearest interval of four, we can get rid of most of the
+	// problems these header values can cause.
+	// This does not cover the case of padding between arrays in excess of four bytes. This may be
+	// on the todo list for a while though, as seeing this much padding in this format of the vol
+	// archive is unheard of.
+	if((vhnd->footer.unknown_vstr.offset % 4) != 0)
+		vhnd->footer.unknown_vstr.offset += (4 - (vhnd->footer.unknown_vstr.offset % 4));
 
 	//TODO: figure out what these are for
 	//TODO: figure out if content format varies from the other arrays
@@ -216,6 +227,8 @@ VErrcode vol_getvstr(VOL handle)
 	log_info("Skipping contents of unknown array.");
 	vhnd->footer.unknown_vstr.data = NULL;
 	vhnd->footer.unknown_vval.offset = vhnd->footer.unknown_vstr.offset+sizeof(struct header)+vhnd->footer.unknown_vstr.header.val;
+	if((vhnd->footer.unknown_vval.offset % 4) != 0)
+		vhnd->footer.unknown_vval.offset += (4 - (vhnd->footer.unknown_vval.offset % 4));
 	return err;
 }
 
@@ -236,6 +249,8 @@ VErrcode vol_getvval(VOL handle)
 	log_info("Skipping contents of unknown array.");
 	vhnd->footer.unknown_vval.data = NULL;
 	vhnd->footer.filenames.offset = vhnd->footer.unknown_vval.offset+sizeof(struct header)+vhnd->footer.unknown_vval.header.val;
+	if((vhnd->footer.filenames.offset % 4) != 0)
+		vhnd->footer.filenames.offset += (4 - (vhnd->footer.filenames.offset % 4));
 	return err;
 }
 
@@ -294,7 +309,9 @@ VErrcode vol_getfilenames(VOL handle)
 		log_message("Array is empty. (No files in volume?)");
 		vhnd->footer.filenames.data = NULL;
 	}
-	vhnd->footer.fileprops.offset=vhnd->footer.filenames.header.val+vhnd->footer.filenames.offset+sizeof(struct header);
+	vhnd->footer.fileprops.offset = vhnd->footer.filenames.header.val+vhnd->footer.filenames.offset+sizeof(struct header);
+	if((vhnd->footer.fileprops.offset % 4) != 0)
+		vhnd->footer.fileprops.offset += (4 - (vhnd->footer.fileprops.offset % 4));
 	return err;
 }
 
@@ -304,19 +321,6 @@ VErrcode vol_getfileprops(VOL handle)
 	log_info("Fetching file properties array.");
 	guint64 os;
 	os = vhnd->footer.fileprops.offset;
-	if (os % 4)
-	{
-		log_info("Offset may be inaccurate.");
-		os=((os/4)+1)*4;
-		log_info("Offset is 0x%x. Offset should be 0x%x. Correcting.", vhnd->footer.fileprops.offset, os);
-		vhnd->footer.fileprops.offset = os;
-		// It seems that the array length value given by the filename array isn't always accurate,
-		// or it doesn't account for any padding between arrays.
-		// Array headers in the footer always start on an offset that's a multiple of four,
-		// so this is how we're compenasting for the time being.
-		// The array size values may need another look. If this isn't a fluke, we should implement a better
-		// way of locating the beginnings of footer arrays.
-	}
 	gint i;
 	log_debug("Scraping array header.");
 	VErrcode err = vol_getheader(handle, &vhnd->footer.fileprops.header, vhnd->footer.fileprops.offset);
