@@ -13,33 +13,35 @@
 #include <gio/gio.h>
 #include "dynvol.h"
 
-struct __attribute__((__packed__)) header
+#define volstruct struct __attribute__((__packed__))
+
+volstruct header
 {
 	gchar ident[4];
 	guint32 val;
 };
 
-struct __attribute__((__packed__)) VBLK
+volstruct VBLK
 {
 	struct header header;
 	gchar *data;
 };
 
-struct __attribute__((__packed__)) vols
+volstruct vols
 {
 	struct header header;
 	guint32 offset;
 	GPtrArray *data;
 };
 
-struct __attribute__((__packed__)) volv
+volstruct volv
 {
 	struct header header;
 	guint32 offset;
 	GArray *data;
 };
 
-struct __attribute__((__packed__)) vval
+volstruct vval
 {
 	guint32 field_1;
 	guint32 field_2;
@@ -48,7 +50,7 @@ struct __attribute__((__packed__)) vval
 	guint8 endcap;
 };
 
-struct __attribute__((__packed__)) file
+volstruct file
 {
 	gchar *name;
 	guint32 size;
@@ -59,7 +61,7 @@ struct __attribute__((__packed__)) file
 	struct VBLK data;
 };
 
-struct __attribute__((__packed__)) footer
+volstruct footer
 {
 	struct vols unknown_vstr;
 	struct volv unknown_vval;
@@ -67,7 +69,7 @@ struct __attribute__((__packed__)) footer
 	struct volv fileprops;
 };
 
-struct __attribute__((__packed__)) volio
+volstruct volio
 {
 	GFile *identifier;
 	GFileInputStream *readstream;
@@ -75,7 +77,7 @@ struct __attribute__((__packed__)) volio
 
 
 //This is VOL on the outside.
-struct __attribute__((__packed__)) volume
+volstruct volume
 {
 	gchar *path;
 	struct volio volio;
