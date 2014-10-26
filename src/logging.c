@@ -12,14 +12,16 @@
 #include "dynvol_private.h"
 #include "logging.h"
 
-void logfunc(const gchar *domain, GLogLevelFlags level, const gchar *message, gpointer misc)
+void logfunc(const gchar *domain, GLogLevelFlags level, const gchar *message,
+	gpointer misc)
 {
 	void (*print)();
 	if (level == VOL_LOG_LEVEL_INFO || level == VOL_LOG_LEVEL_DEBUG || level == VOL_LOG_LEVEL_MOREDEBUG)
 		print = (gpointer)g_print;
 	else
 		print = (gpointer)g_printerr;
-	print("%s %s ", domain, g_date_time_format(g_date_time_new_now_local (), "%T"));
+	print("%s %s ", domain, g_date_time_format(g_date_time_new_now_local (),
+		"%T"));
 	switch(level & (~(G_LOG_FLAG_RECURSION|G_LOG_FLAG_FATAL)))
 	{
 		case VOL_LOG_LEVEL_ERROR:

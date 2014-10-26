@@ -15,7 +15,7 @@
 #include <string.h>
 
 #ifdef G_LOG_DOMAIN
-#undef G_LOG_DOMAIN
+ #undef G_LOG_DOMAIN
 #endif
 #define G_LOG_DOMAIN "vtList"
 
@@ -68,7 +68,7 @@ int main(int argc, char** argv)
 
 	for (i = optind + 1; i < argc; i++)
 	{
-		//We're going to skip handling of external blobs for now.
+		/* We're going to skip handling of external blobs for now. */
 		g_ptr_array_add(volpaths, (gpointer)argv[i]);
 	}
 
@@ -91,7 +91,8 @@ int main(int argc, char** argv)
 	g_debug("Entering for loop");
 	for(i = 0; i < volpaths->len; i++)
 	{
-		g_debug("Getting file list for %s\n", (gchar*)g_ptr_array_index(volpaths,i));
+		g_debug("Getting file list for %s\n",
+			(gchar*)g_ptr_array_index(volpaths,i));
 		volhandle = vol_load((gchar*)g_ptr_array_index(volpaths,i));
 		VErr err = vol_get_error(volhandle);
 		if (err.code != 0)

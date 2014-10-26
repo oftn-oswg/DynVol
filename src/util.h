@@ -15,13 +15,14 @@
 #include <glib.h>
 
 
-//Replaces back/forward slashes and invalid characters
-//Standardizes path
-//(not really, all it does ATM is replace backslashes)
-//Should be g_free()'d when done
+/* Replaces back/forward slashes and invalid characters
+ * Standardizes path
+ * (not really, all it does ATM is replace backslashes)
+ * Should be g_free()'d when done
+ */
 gchar* sanitizepath(const gchar* dirtypath);
 
-//This is for string arrays
+/* This is for string arrays */
 void printfiles(gpointer filestruct, gpointer count);
 
 struct counter {

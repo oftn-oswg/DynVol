@@ -11,7 +11,7 @@
 #include "dynvol_private.h"
 #include <glib.h>
 
-//yeah, this function gets its own file
+/* yeah, this function gets its own file */
 
 VErr vol_get_error(VOL handle)
 {
@@ -20,7 +20,7 @@ VErr vol_get_error(VOL handle)
 
 	ret.code = vhnd->error;
 
-	//might be some memory leaks here, not sure
+	/* might be some memory leaks here, not sure */
 	switch(vhnd->error){
 		case VERR_OK:
 			g_stpcpy(ret.message, "No error");
@@ -39,7 +39,7 @@ VErr vol_get_error(VOL handle)
 			break;
 		case VERR_BROKEN_ARCHIVE:
 			g_stpcpy(ret.message, "Archive is either invalid or an unrecognized format");
-			//we may be able to provide more information here
+			/* we may be able to provide more information here */
 			break;
 		case VERR_UNEXPECTED_EOF:
 			g_stpcpy(ret.message, "Unexpected end of file");

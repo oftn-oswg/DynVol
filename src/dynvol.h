@@ -13,13 +13,14 @@
 #include <glib.h>
 
 #ifdef __cplusplus
-extern "C" {
+ extern "C" {
 #endif
 
-// Handle for your volume.
+/* Handle for your volume. */
 typedef gpointer VOL;
 
-#define VOL_ERR_LEN 128 //This is pretty arbitrary for now
+#define VOL_ERR_LEN 128
+/* This is pretty arbitrary for now */
 
 typedef enum {
 	VERR_OK= 0,
@@ -32,16 +33,21 @@ typedef enum {
 	VERR_SEEK_FAILED,
 	VERR_READ_FAILED,
 	VERR_CLOSE_FAILED,
-	VERR_LAST //Not actually an error
+	VERR_LAST /* Not actually an error */
 } VErrcode;
 
 
 
-//struct for DynVol errors
+/* struct for DynVol errors */
 struct _errstruct {
 	VErrcode code;
 	gchar message[VOL_ERR_LEN];
-	//gpointer addtl_data; //not used yet
+	/*
+	 * addtl_data not used yet
+	 */
+	/*
+	gpointer addtl_data;
+	*/
 };
 
 typedef struct _errstruct VErr;
@@ -114,7 +120,7 @@ enum vol_loglevels
 
   VOL_LOG_LEVEL_TODO            = 1 << 8,
   VOL_LOG_LEVEL_FIXME           = 1 << 9,
-  VOL_LOG_LEVEL_MOREDEBUG       = 1 << 10,  //Superverbose
+  VOL_LOG_LEVEL_MOREDEBUG       = 1 << 10,
 
   VOL_LOG_LEVEL_MASK = ~(VOL_LOG_LEVEL_MOREDEBUG | VOL_LOG_LEVEL_TODO | VOL_LOG_LEVEL_FIXME | VOL_LOG_LEVEL_DEBUG | VOL_LOG_LEVEL_INFO)
 };
@@ -124,7 +130,7 @@ enum vol_loglevels
 
 
 #ifdef __cplusplus
-}
+ }
 #endif
 
 #endif

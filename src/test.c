@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 #ifdef G_LOG_DOMAIN
-#undef G_LOG_DOMAIN
+ #undef G_LOG_DOMAIN
 #endif
 #define G_LOG_DOMAIN "vtTest"
 

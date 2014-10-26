@@ -13,12 +13,14 @@
 #include "dynvol.h"
 #include <glib.h>
 
-//IO stuff
+/* IO stuff */
 
-//Should be g_free()'d when done
-gchar* readpart(struct volio *volio, const goffset offset, const guint64 bytes);
+/* Should be g_free()'d when done */
+gchar* readpart(struct volio *volio, const goffset offset,
+	const guint64 bytes);
 
 VErrcode readbyte(struct volio *volio, const goffset offset, guint8 *byte);
-VErrcode readinto(struct volio *volio, const goffset offset, const gsize size, gpointer container);
+VErrcode readinto(struct volio *volio, const goffset offset, const gsize size,
+	gpointer container);
 
 #endif

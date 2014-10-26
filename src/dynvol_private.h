@@ -79,7 +79,7 @@ volstruct volio
 };
 
 
-//This is VOL on the outside.
+/* This is VOL on the outside. */
 volstruct volume
 {
 	gchar *path;
@@ -92,25 +92,27 @@ volstruct volume
 	VErrcode error;
 };
 
-//Fetches metadata and stores it inside vol
+/* Fetches metadata and stores it inside vol */
 VErrcode vol_getmetadata(VOL handle);
 
-//Fetches volume footer and stores it inside vol
+/* Fetches volume footer and stores it inside vol */
 VErrcode vol_getfooter(VOL handle);
 
-//Fetches a header
-VErrcode vol_getheader(VOL handle, struct header *header, const guint32 offset);
+/* Fetches a header */
+VErrcode vol_getheader(VOL handle, struct header *header,
+	const guint32 offset);
 
-//Functions for skipping the first two arrays in the footer
-//Probably temporary
+/* Functions for skipping the first two arrays in the footer
+ * Probably temporary
+ */
 VErrcode vol_getvstr(VOL handle);
 VErrcode vol_getvval(VOL handle);
 
-//Functions for fetching file metadata
+/* Functions for fetching file metadata */
 VErrcode vol_getfilenames(VOL handle);
 VErrcode vol_getfileprops(VOL handle);
 
-//Function to free files array
+/* Function to free files array */
 void vol_filesarray_free(gpointer file);
 
 #endif

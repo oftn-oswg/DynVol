@@ -8,7 +8,7 @@
  */
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+ #define _GNU_SOURCE
 #endif
 
 #include <string.h>
@@ -33,36 +33,54 @@ VOL vol_load(const gchar* path)
 	handle=g_malloc(sizeof(struct volume));
 	log_todo("Figure out how to return errors from vol_load");
 
-	//initialize variables
+	/*
+	 * Variable initialization
+	 */
+
+	/* Volume and handle info */
 	handle->path = NULL;
-	handle->volio.identifier = NULL;
-	handle->volio.readstream = NULL;
 	handle->files = NULL;
 	handle->open = FALSE;
 	handle->writable = FALSE;
 	handle->error = VERR_OK;
+
+	/* Volume io */
+	handle->volio.identifier = NULL;
+	handle->volio.readstream = NULL;
+
+	/* Volume header */
 	memset(&handle->header.ident, 0, sizeof(gchar[4]));
 	handle->header.val = 0;
+
+	/* Volume footer array header identifiers */
 	memset(&handle->footer.unknown_vstr.header.ident, 0, sizeof(gchar[4]));
-	handle->footer.unknown_vstr.header.val = 0;
-	handle->footer.unknown_vstr.offset = 0;
-	handle->footer.unknown_vstr.data = NULL;
 	memset(&handle->footer.unknown_vval.header.ident, 0, sizeof(gchar[4]));
-	handle->footer.unknown_vval.header.val = 0;
-	handle->footer.unknown_vval.offset = 0;
-	handle->footer.unknown_vval.data = NULL;
 	memset(&handle->footer.filenames.header.ident, 0, sizeof(gchar[4]));
-	handle->footer.filenames.header.val = 0;
-	handle->footer.filenames.offset = 0;
-	handle->footer.filenames.data = NULL;
 	memset(&handle->footer.fileprops.header.ident, 0, sizeof(gchar[4]));
+
+	/* Volume footer array values */
+	handle->footer.unknown_vstr.header.val = 0;
+	handle->footer.unknown_vval.header.val = 0;
+	handle->footer.filenames.header.val = 0;
 	handle->footer.fileprops.header.val = 0;
-	handle->footer.fileprops.offset = 0;
+	
+	/* Volume footer array contents */
+	handle->footer.unknown_vstr.data = NULL;
+	handle->footer.unknown_vval.data = NULL;
+	handle->footer.filenames.data = NULL;
 	handle->footer.fileprops.data = NULL;
 
+	/* Volume footer array offsets */
+	handle->footer.unknown_vstr.offset = 0;
+	handle->footer.unknown_vval.offset = 0;
+	handle->footer.filenames.offset = 0;
+	handle->footer.fileprops.offset = 0;
+	
 	handle->path = g_strdup(path);
 
-	//We're just going to make the assumption that the file isn't going to change between testing and use.
+	/* We're just going to make the assumption that the file isn't going to 
+	 * change between testing and use.
+	 */
 	if (!g_file_test (path, G_FILE_TEST_EXISTS))
 	{
 		log_critical("Volumme %s does not exist. Creation of new volumes not yet supported.", path);
@@ -75,13 +93,16 @@ VOL vol_load(const gchar* path)
 	}
 	log_debug("Attempting to open %s", path);
 
-	//Just to be safe, we will only open the file for writing when we're actually writing to it.
-	//I found out the hard way if you screw something up just right while the file is open for writing, bad things happen.
-	//We don't want bad things to happen.
-	//This archive format is broken enough as it is...
-
+	/* Just to be safe, we will only open the file for writing when we're
+	 * actually writing to it.
+	 * I found out the hard way if you screw something up just right while the
+	 * file is open for writing, bad things happen.
+	 * We don't want bad things to happen.
+	 * This archive format is broken enough as it is...
+	 */
 	handle->volio.identifier = g_file_new_for_path(path);
-	handle->volio.readstream = g_file_read(handle->volio.identifier, NULL, &error);
+	handle->volio.readstream = g_file_read(handle->volio.identifier, NULL,
+		&error);
 	if (!handle->volio.readstream) {
 		log_error("Failed opening %s\n\t%s", path, error->message);
 		handle->error = VERR_UNKNOWN;
@@ -89,16 +110,20 @@ VOL vol_load(const gchar* path)
 	}
 	handle->open = TRUE;
 
-	//Code left over from using glib gio
-	/* log_debug("Setting encoding to NULL.");
+	/* Code left over from using glib io
+	 * We may need to convert it at some point
+	 */
+	/*
+	log_debug("Setting encoding to NULL.");
 	ret = g_io_channel_set_encoding(handle->volio, NULL, &error);
 	if (ret != G_IO_STATUS_NORMAL)
 	{
-		log_warning("Failed setting encoding for %s\n\t%s", path, error->message);
-	} */
+		log_warning("Failed setting encoding for %s\n\t%s", path,
+		error->message);
+	}
+	*/
 
 	handle->error = vol_getmetadata((gpointer)handle);
-	//vol_parsemetadata(handle);
 	return (gpointer)handle;
 }
 
@@ -148,9 +173,11 @@ VErrcode vol_getheader(VOL handle, struct header *header, const guint32 offset)
 {
 	struct volume* vhnd = handle;
 	log_info("Fetching header");
-	VErrcode err = readinto(&vhnd->volio, offset, (gsize)sizeof(struct header), (gpointer)header);
+	VErrcode err = readinto(&vhnd->volio, offset,
+		(gsize)sizeof(struct header), (gpointer)header);
 	log_debug("Got header:");
-	log_debug("\tIDstring: %c%c%c%c", header->ident[0], header->ident[1], header->ident[2], header->ident[3]);
+	log_debug("\tIDstring: %c%c%c%c", header->ident[0], header->ident[1],
+		header->ident[2], header->ident[3]);
 	log_debug("\tValue: 0x%x", header->val);
 	return err;
 }
@@ -160,20 +187,22 @@ VErrcode vol_getfooter(VOL handle)
 	struct volume* vhnd = handle;
 	log_info("Fetching volume footer.");
 	vhnd->footer.unknown_vstr.offset = vhnd->header.val;
-	// In some cases the header values point to the end of their array, rather than at the beginning
-	// of the next array.
-	// Since headers are 4-byte aligned inside the volume file, we can ensure that our offsets are
-	// also multiples of four.
-	// By rounding our offsets /up/ to the nearest interval of four, we can get rid of most of the
-	// problems these header values can cause.
-	// This does not cover the case of padding between arrays in excess of four bytes. This may be
-	// on the todo list for a while though, as seeing this much padding in this format of the vol
-	// archive is unheard of.
+	/* In some cases the header values point to the end of their array, rather
+	 * than at the beginning of the next array.
+	 * Since headers are 4-byte aligned inside the volume file, we can ensure
+	 * that our offsets are also multiples of four.
+	 * By rounding our offsets /up/ to the nearest interval of four, we can
+	 * get rid of most of the problems these header values can cause.
+	 * This does not cover the case of padding between arrays in excess of
+	 * four bytes. This may be on the todo list for a while though, as seeing
+	 * this much padding in this format of the vol archive is unheard of.
+	 */
 	if((vhnd->footer.unknown_vstr.offset % 4) != 0)
 		vhnd->footer.unknown_vstr.offset += (4 - (vhnd->footer.unknown_vstr.offset % 4));
 
-	//TODO: figure out what these are for
-	//TODO: figure out if content format varies from the other arrays
+	/* TODO: figure out what these are for
+	 * TODO: figure out if content format varies from the other arrays
+	 */
 	VErrcode err = vol_getvstr(handle);
 	if (err)
 		return err;
@@ -196,7 +225,7 @@ VErrcode vol_getmetadata(VOL handle)
 	if (err)
 		return err;
 
-	//Header verification
+	/* Header verification */
 	if (memcmp((gchar[]){' ', 'V', 'O', 'L'}, vhnd->header.ident, 4) == 0) {
 		log_debug("Magic number recognized. Archive is Starsiege volume.");
 	} else if (memcmp("PVOL", vhnd->header.ident, 4) == 0) {
@@ -217,18 +246,20 @@ VErrcode vol_getmetadata(VOL handle)
 
 VErrcode vol_getvstr(VOL handle)
 {
-	//gets header only
+	/* gets header only */
 	struct volume* vhnd = handle;
 	log_info("Fetching string array.");
 	log_debug("Scraping array header.");
-	VErrcode err = vol_getheader(handle, &vhnd->footer.unknown_vstr.header, vhnd->footer.unknown_vstr.offset);
+	VErrcode err = vol_getheader(handle, &vhnd->footer.unknown_vstr.header,
+		vhnd->footer.unknown_vstr.offset);
 	if (err)
 		return err;
-	//Header verification
-	//There might be a memory leak here
+	/* Header verification
+	 * There might be a memory leak here
+	 */
 	if (memcmp("vols", vhnd->footer.unknown_vstr.header.ident, 4)) {
 		log_warning("Array identity string not recognized.");
-		//Not setting error here, at least not yet
+		/* Not setting error here, at least not yet */
 	}
 	log_info("Skipping contents of unknown array.");
 	vhnd->footer.unknown_vstr.data = NULL;
@@ -240,17 +271,20 @@ VErrcode vol_getvstr(VOL handle)
 
 VErrcode vol_getvval(VOL handle)
 {
-	//gets header only
+	/* gets header only */
 	struct volume* vhnd = handle;
 	log_info("Fetching value set array.");
 	log_debug("Scraping array header.");
-	VErrcode err = vol_getheader(handle, &vhnd->footer.unknown_vval.header, vhnd->footer.unknown_vval.offset);
+	VErrcode err = vol_getheader(handle, &vhnd->footer.unknown_vval.header,
+		vhnd->footer.unknown_vval.offset);
 	if (err)
 		return err;
-	//Header verification
+	/* Header verification
+	 * There might be a memory leak here
+	 */
 	if (memcmp("voli", vhnd->footer.unknown_vval.header.ident, 4)) {
 		log_critical("Array identity string not recognized.");
-		//Not setting error here, at least not yet
+		/* Not setting error here, at least not yet */
 	}
 	log_info("Skipping contents of unknown array.");
 	vhnd->footer.unknown_vval.data = NULL;
@@ -271,10 +305,13 @@ VErrcode vol_getfilenames(VOL handle)
 	gchar* datadir;
 	guint8 bite;
 	log_debug("Scraping array header.");
-	VErrcode err = vol_getheader(handle, &vhnd->footer.filenames.header, vhnd->footer.filenames.offset);
+	VErrcode err = vol_getheader(handle, &vhnd->footer.filenames.header,
+		vhnd->footer.filenames.offset);
 	if (err)
 		return err;
-	//Header verification
+	/* Header verification
+	 * There might be a memory leak here
+	 */
 	if (memcmp("vols", vhnd->footer.filenames.header.ident, 4)) {
 		log_critical("Array identity string not recognized.");
 		return VERR_BROKEN_ARCHIVE;
@@ -345,17 +382,21 @@ VErrcode vol_getfileprops(VOL handle)
 	gint i;
 	guint o;
 	log_debug("Scraping array header.");
-	VErrcode err = vol_getheader(handle, &vhnd->footer.fileprops.header, vhnd->footer.fileprops.offset);
+	VErrcode err = vol_getheader(handle, &vhnd->footer.fileprops.header,
+		vhnd->footer.fileprops.offset);
 	if (err)
 		return err;
-	//Header verification
+	/* Header verification
+	 * There might be a memory leak here
+	 */
 	if (memcmp("voli", vhnd->footer.fileprops.header.ident, 4)) {
 		log_critical("Array identity string not recognized.");
 	}
 	if (vhnd->footer.fileprops.header.val != 0)
 	{
 		os +=sizeof(struct header);
-		vhnd->footer.fileprops.data = g_array_new(FALSE, TRUE, sizeof(struct vval));
+		vhnd->footer.fileprops.data = g_array_new(FALSE, TRUE,
+			sizeof(struct vval));
 		log_debug("Fetching array data.");
 		for (i = 0; i < vhnd->footer.fileprops.header.val; i+=(sizeof(struct vval)))
 		{
@@ -364,7 +405,8 @@ VErrcode vol_getfileprops(VOL handle)
 			log_debug("Pulling file struct from %p", (gpointer)vfile);
 			o++;
 			log_debug("Pulling value set.");
-			err = readinto(&vhnd->volio, (guint64)(os+i), (gsize)sizeof(struct vval), (gpointer)propset);
+			err = readinto(&vhnd->volio, (guint64)(os+i),
+				(gsize)sizeof(struct vval), (gpointer)propset);
 			if (err)
 				return err;
 
@@ -375,19 +417,25 @@ VErrcode vol_getfileprops(VOL handle)
 
 			log_info("Values pulled:");
 
-			log_info("\t32-bit value 1:\t0x%x\t(unknown)", propset->field_1);
-			// Not putting this one into the file struct until we know what it's for
+			log_info("\t32-bit value 1:    0x%x\t(unknown)", propset->field_1);
+			/* Not putting this one into the file struct until we know what
+			 * it's for
+			 */
 
-			log_info("\t32-bit value 2:\t0x%x\t(filename array offset)", propset->field_2);
+			log_info("\t32-bit value 2:    0x%x\t(filename array offset)",
+				propset->field_2);
 			vfile->n_offset = propset->field_2;
 
-			log_info("\t32-bit value 3:\t0x%x\t(file VBLK offset)", propset->field_3);
+			log_info("\t32-bit value 3:    0x%x\t(file VBLK offset)",
+				propset->field_3);
 			vfile->b_offset = propset->field_3;
 
-			log_info("\t32-bit value 4:\t0x%x\t(uncompressed filesize)", propset->field_4);
+			log_info("\t32-bit value 4:    0x%x\t(uncompressed filesize)",
+				propset->field_4);
 			vfile->size = propset->field_4;
 
-			log_info("\t8-bit value:   \t0x%x\t\t(compression)", propset->endcap);
+			log_info("\t8-bit value:       0x%x\t\t(compression)",
+				propset->endcap);
 			if(propset->endcap != 0)
 			{
 				vfile->compressed = TRUE;
@@ -395,7 +443,8 @@ VErrcode vol_getfileprops(VOL handle)
 				vfile->compressed = FALSE;
 			}
 
-			log_info("\tVBLK 24-bit value:\t0x%x\t(compressed filesize)", (vfile->data.header.val - 0x80000000));
+			log_info("\tVBLK 24-bit value: 0x%x\t(compressed filesize)",
+				(vfile->data.header.val - 0x80000000));
 			vfile->packed_size = (vfile->data.header.val - 0x80000000);
 
 			g_array_append_val(vhnd->footer.fileprops.data, (*propset));
