@@ -368,6 +368,11 @@ VErrcode vol_getfileprops(VOL handle)
 			if (err)
 				return err;
 
+			log_info("Scraping VBLK header.");
+			err = vol_getheader(handle, &vfile->data.header, propset->field_3);
+			if (err)
+				return err;
+
 			log_info("Values pulled:");
 
 			log_info("\t32-bit value 1:\t0x%x\t(unknown)", propset->field_1);
@@ -390,10 +395,8 @@ VErrcode vol_getfileprops(VOL handle)
 				vfile->compressed = FALSE;
 			}
 
-			log_info("Scraping VBLK header.");
-			err = vol_getheader(handle, &vfile->data.header, propset->field_3);
-			if (err)
-				return err;
+			log_info("\tVBLK 24-bit value:\t0x%x\t(compressed filesize)", (vfile->data.header.val - 0x80000000));
+			vfile->packed_size = (vfile->data.header.val - 0x80000000);
 
 			g_array_append_val(vhnd->footer.fileprops.data, (*propset));
 			g_free(propset);
