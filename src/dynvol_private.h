@@ -51,9 +51,11 @@ volstruct vval
 	guint8 endcap;
 };
 
-volstruct file
+volstruct vfile
 {
+	gchar *path;
 	gchar *name;
+	gchar *dir;
 	guint32 size;
 	gint32 packed_size;
 	gboolean compressed;
@@ -82,7 +84,7 @@ volstruct volume
 {
 	gchar *path;
 	struct volio volio;
-	GArray *files;
+	GPtrArray *files;
 	gboolean open;
 	gboolean writable;
 	struct header header;
@@ -108,5 +110,7 @@ VErrcode vol_getvval(VOL handle);
 VErrcode vol_getfilenames(VOL handle);
 VErrcode vol_getfileprops(VOL handle);
 
+//Function to free files array
+void vol_filesarray_free(gpointer file);
 
 #endif

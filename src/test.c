@@ -17,7 +17,7 @@
 #define G_LOG_DOMAIN "vtTest"
 
 int main(int argc, char** argv) {
-	vol_levelmask = VOL_LOG_LEVEL_MASK + VOL_LOG_LEVEL_MOREDEBUG + VOL_LOG_LEVEL_FIXME + VOL_LOG_LEVEL_TODO + G_LOG_LEVEL_DEBUG + G_LOG_LEVEL_INFO;
+	vol_levelmask = VOL_LOG_LEVEL_MASK + /* VOL_LOG_LEVEL_MOREDEBUG + VOL_LOG_LEVEL_FIXME + VOL_LOG_LEVEL_TODO + */ G_LOG_LEVEL_DEBUG + G_LOG_LEVEL_INFO;
 	g_log_set_handler(G_LOG_DOMAIN, vol_levelmask, logfunc, NULL);
 	vol_set_debug(vol_levelmask);
 	VOL volhandle;

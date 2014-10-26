@@ -22,6 +22,10 @@
 gchar* sanitizepath(const gchar* dirtypath);
 
 //This is for string arrays
-void printfiles(gpointer name, gpointer count);
+void printfiles(gpointer filestruct, gpointer count);
+
+struct counter {
+	guint count;
+};
 
 #endif

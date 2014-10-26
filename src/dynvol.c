@@ -7,6 +7,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <string.h>
 #include <glib.h>
 #include "dynvol.h"
@@ -15,6 +19,7 @@
 #include "logging.h"
 #include "io.h"
 #include <gio/gio.h>
+#include <libgen.h>
 
 VOL vol_load(const gchar* path)
 {
@@ -131,7 +136,7 @@ void vol_unload(VOL handle)
 		g_free(g_array_free(vhnd->footer.fileprops.data, TRUE));
 	log_debug("Freeing files.");
 	if (vhnd->files != NULL)
-		g_free(g_array_free(vhnd->files, TRUE));
+		g_free(g_ptr_array_free(vhnd->files, TRUE));
 	log_debug("Freeing path.");
 	g_free(vhnd->path);
 	log_debug("Freeing handle.");
@@ -258,10 +263,12 @@ VErrcode vol_getvval(VOL handle)
 VErrcode vol_getfilenames(VOL handle)
 {
 	struct volume* vhnd = handle;
+	struct vfile *curfile;
 	log_info("Fetching filenames from array.");
 	guint64 os;
 	os = vhnd->footer.filenames.offset;
-	gint i, j = 0;
+	gint i, j = 0, l = 0;
+	gchar* datadir;
 	guint8 bite;
 	log_debug("Scraping array header.");
 	VErrcode err = vol_getheader(handle, &vhnd->footer.filenames.header, vhnd->footer.filenames.offset);
@@ -276,6 +283,7 @@ VErrcode vol_getfilenames(VOL handle)
 	{
 		os+=sizeof(struct header);
 		vhnd->footer.filenames.data = g_ptr_array_new_with_free_func(g_free);
+		vhnd->files = g_ptr_array_new_with_free_func(vol_filesarray_free);
 		log_debug("Fetching array data.");
 		for (i = 0; i < vhnd->footer.filenames.header.val; i++)
 		{
@@ -287,24 +295,35 @@ VErrcode vol_getfilenames(VOL handle)
 			{
 				j++;
 				log_debug("String at offset 0x%lx indexed. Size is %d. Pulling now.", os, j);
-				gchar *data;
+				gchar *data, *datacopy1, *datacopy2;
+				curfile = (struct vfile*)g_malloc(sizeof(struct vfile));
+				curfile->data.data = NULL;
 				data = readpart(&vhnd->volio, (guint64)os, sizeof(gchar)*j);
 				log_debug("Pulled string: %s.", data);
 				i++;
 				os+=j;
 				j=0;
-				log_debug("Adding string to array.");
+				log_debug("Adding string to arrays.");
+				datacopy1 = g_strdup(data);
+				datacopy2 = g_strdup(data);
 				g_ptr_array_add(vhnd->footer.filenames.data, (gpointer)data);
-				log_todo("Construct file struct array");
+				curfile->path = g_strdup(data);
+				curfile->name = g_strdup(basename(datacopy1));
+				curfile->dir = g_strdup(dirname(datacopy1));
+				g_free(datacopy1);
+				g_free(datacopy2);
+				g_ptr_array_add(vhnd->files, (gpointer)curfile);
+				l++;
 			} else if (bite == 0x5C) {
 				log_todo("Warn windows users about invalid characters and forward slashes");
 				log_warning("An internal path string may contain backslashes.");
 			}
 		}
-		guint* k;
-		k = g_malloc0(sizeof(guint));
-		log_info("Filename array created.");
-		g_ptr_array_foreach(vhnd->footer.filenames.data, printfiles, (gpointer)k);
+		struct counter* k;
+		k = g_malloc0(sizeof(struct counter));
+		k->count = 0;
+		log_info("File arrays created.");
+		g_ptr_array_foreach(vhnd->files, printfiles, (gpointer)k);
 		g_free(k);
 	} else {
 		log_message("Array is empty. (No files in volume?)");
@@ -319,10 +338,12 @@ VErrcode vol_getfilenames(VOL handle)
 VErrcode vol_getfileprops(VOL handle)
 {
 	struct volume* vhnd = handle;
+	struct vfile *vfile;
 	log_info("Fetching file properties array.");
 	guint64 os;
 	os = vhnd->footer.fileprops.offset;
 	gint i;
+	guint o;
 	log_debug("Scraping array header.");
 	VErrcode err = vol_getheader(handle, &vhnd->footer.fileprops.header, vhnd->footer.fileprops.offset);
 	if (err)
@@ -339,18 +360,39 @@ VErrcode vol_getfileprops(VOL handle)
 		for (i = 0; i < vhnd->footer.fileprops.header.val; i+=(sizeof(struct vval)))
 		{
 			struct vval *propset = g_malloc0(sizeof(struct vval));
+			vfile = g_ptr_array_index(vhnd->files, o);
+			log_debug("Pulling file struct from %p", (gpointer)vfile);
+			o++;
 			log_debug("Pulling value set.");
 			err = readinto(&vhnd->volio, (guint64)(os+i), (gsize)sizeof(struct vval), (gpointer)propset);
 			if (err)
 				return err;
+
+			log_debug("%s %s %s", vfile->path, vfile->dir, vfile->name);
+
 			log_info("Values pulled:");
+
 			log_info("\t32-bit value 1:\t0x%x\t(unknown)", propset->field_1);
+			// Not putting this one into the file struct until we know what it's for
+
 			log_info("\t32-bit value 2:\t0x%x\t(filename array offset)", propset->field_2);
+			vfile->n_offset = propset->field_2;
+
 			log_info("\t32-bit value 3:\t0x%x\t(file VBLK offset)", propset->field_3);
+			vfile->b_offset = propset->field_3;
+
 			log_info("\t32-bit value 4:\t0x%x\t(uncompressed filesize)", propset->field_4);
+			vfile->size = propset->field_4;
+
 			log_info("\t8-bit value:   \t0x%x\t\t(compression)", propset->endcap);
-			log_todo("Update file struct array");
-			log_todo(" Get VBLK headers for each file");
+			if(propset->endcap != 0)
+			{
+				vfile->compressed = TRUE;
+			} else {
+				vfile->compressed = FALSE;
+			}
+
+			log_todo("Get VBLK headers for each file");
 			g_array_append_val(vhnd->footer.fileprops.data, (*propset));
 			g_free(propset);
 		}
@@ -374,6 +416,22 @@ struct volfilelist vol_get_filelist(VOL handle)
 		filelist.filelist[i] = g_strdup((gchar*)g_ptr_array_index(vhnd->footer.filenames.data,i));
 	}
 	return filelist;
+}
+
+void vol_filesarray_free(gpointer file)
+{
+	struct vfile* vfile = file;
+	file = NULL;
+	if (vfile->data.data != NULL)
+		g_free(vfile->data.data);
+	if (vfile->path != NULL)
+		g_free(vfile->path);
+	if (vfile->name != NULL)
+		g_free(vfile->name);
+	if (vfile->dir != NULL)
+		g_free(vfile->dir);
+	if (vfile != NULL)
+		g_free(vfile);
 }
 
 void vol_set_debug(guint mask)
