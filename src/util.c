@@ -19,23 +19,21 @@
 
 gchar* sanitizepath(const gchar* dirtypath)
 {
-	gchar* cleanpath;
-	gint i;
-	cleanpath = g_malloc(sizeof(gchar)*(strlen(dirtypath)));
-	for (i=0; i <= strlen(dirtypath); i++)
-	{
-		if (dirtypath[i] == 0x5C)
-		{
-			cleanpath[i] = 0x2F;
-		} else {
-			cleanpath[i] = dirtypath[i];
-		}
-	}
-	return cleanpath;
+    gchar* cleanpath;
+    gint i;
+    cleanpath = g_malloc(sizeof(gchar)*(strlen(dirtypath)));
+    for (i=0; i <= strlen(dirtypath); i++)
+    {
+        if (dirtypath[i] == 0x5C)
+            cleanpath[i] = 0x2F;
+        else
+            cleanpath[i] = dirtypath[i];
+    }
+    return cleanpath;
 }
 
 void printfiles(gpointer name, gpointer count)
 {
-	(*(guint*)count)++;
-	log_info("\tFile %u: %s", (*(guint*)count), (gchar*)name);
+    (*(guint*)count)++;
+    log_info("\tFile %u: %s", (*(guint*)count), (gchar*)name);
 }

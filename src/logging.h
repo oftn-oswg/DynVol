@@ -127,4 +127,4 @@ guint vol_levelmask;
 
 /* This is our actual log function */
 void logfunc (const gchar *domain, GLogLevelFlags level, const gchar *message,
-  gpointer misc);
+              gpointer misc);

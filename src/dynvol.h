@@ -13,7 +13,7 @@
 #include <glib.h>
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Handle for your volume. */
@@ -23,31 +23,31 @@ typedef gpointer VOL;
 /* This is pretty arbitrary for now */
 
 typedef enum {
-	VERR_OK= 0,
-	VERR_UNKNOWN,
-	VERR_FILE_NOT_FOUND,
-	VERR_ARCHIVE_UNRECOGNIZED,
-	VERR_UNSUPPORTED_ARCHIVE,
-	VERR_BROKEN_ARCHIVE,
-	VERR_UNEXPECTED_EOF,
-	VERR_SEEK_FAILED,
-	VERR_READ_FAILED,
-	VERR_CLOSE_FAILED,
-	VERR_LAST /* Not actually an error */
+    VERR_OK= 0,
+    VERR_UNKNOWN,
+    VERR_FILE_NOT_FOUND,
+    VERR_ARCHIVE_UNRECOGNIZED,
+    VERR_UNSUPPORTED_ARCHIVE,
+    VERR_BROKEN_ARCHIVE,
+    VERR_UNEXPECTED_EOF,
+    VERR_SEEK_FAILED,
+    VERR_READ_FAILED,
+    VERR_CLOSE_FAILED,
+    VERR_LAST /* Not actually an error */
 } VErrcode;
 
 
 
 /* struct for DynVol errors */
 struct _errstruct {
-	VErrcode code;
-	gchar message[VOL_ERR_LEN];
-	/*
-	 * addtl_data not used yet
-	 */
-	/*
-	gpointer addtl_data;
-	*/
+    VErrcode code;
+    gchar message[VOL_ERR_LEN];
+    /*
+     * addtl_data not used yet
+     */
+    /*
+    gpointer addtl_data;
+    */
 };
 
 typedef struct _errstruct VErr;
@@ -76,15 +76,15 @@ void vol_unload(VOL handle);
 /**
  * vol_get_error
  * @handle: A volume handle as returned by vol_load
- * 
+ *
  * Returns a VErr containing information about the last run DynVol function.
  **/
 VErr vol_get_error(VOL handle);
 
 
 struct volfilelist {
-	guint len;
-	gchar** filelist;
+    guint len;
+    gchar** filelist;
 };
 
 /**
@@ -106,23 +106,22 @@ void vol_set_debug(guint mask);
  *
  **/
 
-enum vol_loglevels
-{
-  VOL_LOG_FLAG_RECURSION          = G_LOG_FLAG_RECURSION,
-  VOL_LOG_FLAG_FATAL              = G_LOG_FLAG_FATAL,
+enum vol_loglevels {
+    VOL_LOG_FLAG_RECURSION          = G_LOG_FLAG_RECURSION,
+    VOL_LOG_FLAG_FATAL              = G_LOG_FLAG_FATAL,
 
-  VOL_LOG_LEVEL_ERROR             = G_LOG_LEVEL_ERROR,
-  VOL_LOG_LEVEL_CRITICAL          = G_LOG_LEVEL_CRITICAL,
-  VOL_LOG_LEVEL_WARNING           = G_LOG_LEVEL_WARNING,
-  VOL_LOG_LEVEL_MESSAGE           = G_LOG_LEVEL_MESSAGE,
-  VOL_LOG_LEVEL_INFO              = G_LOG_LEVEL_INFO,
-  VOL_LOG_LEVEL_DEBUG             = G_LOG_LEVEL_DEBUG,
+    VOL_LOG_LEVEL_ERROR             = G_LOG_LEVEL_ERROR,
+    VOL_LOG_LEVEL_CRITICAL          = G_LOG_LEVEL_CRITICAL,
+    VOL_LOG_LEVEL_WARNING           = G_LOG_LEVEL_WARNING,
+    VOL_LOG_LEVEL_MESSAGE           = G_LOG_LEVEL_MESSAGE,
+    VOL_LOG_LEVEL_INFO              = G_LOG_LEVEL_INFO,
+    VOL_LOG_LEVEL_DEBUG             = G_LOG_LEVEL_DEBUG,
 
-  VOL_LOG_LEVEL_TODO            = 1 << 8,
-  VOL_LOG_LEVEL_FIXME           = 1 << 9,
-  VOL_LOG_LEVEL_MOREDEBUG       = 1 << 10,
+    VOL_LOG_LEVEL_TODO            = 1 << 8,
+    VOL_LOG_LEVEL_FIXME           = 1 << 9,
+    VOL_LOG_LEVEL_MOREDEBUG       = 1 << 10,
 
-  VOL_LOG_LEVEL_MASK = ~(VOL_LOG_LEVEL_MOREDEBUG | VOL_LOG_LEVEL_TODO | VOL_LOG_LEVEL_FIXME | VOL_LOG_LEVEL_DEBUG | VOL_LOG_LEVEL_INFO)
+    VOL_LOG_LEVEL_MASK = ~(VOL_LOG_LEVEL_MOREDEBUG | VOL_LOG_LEVEL_TODO | VOL_LOG_LEVEL_FIXME | VOL_LOG_LEVEL_DEBUG | VOL_LOG_LEVEL_INFO)
 };
 
 
@@ -130,7 +129,7 @@ enum vol_loglevels
 
 
 #ifdef __cplusplus
- }
+}
 #endif
 
 #endif

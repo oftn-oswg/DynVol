@@ -26,7 +26,7 @@ gchar* sanitizepath(const gchar* dirtypath);
 void printfiles(gpointer filestruct, gpointer count);
 
 struct counter {
-	guint count;
+    guint count;
 };
 
 #endif

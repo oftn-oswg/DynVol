@@ -17,10 +17,10 @@
 
 /* Should be g_free()'d when done */
 gchar* readpart(struct volio *volio, const goffset offset,
-	const guint64 bytes);
+                const guint64 bytes);
 
 VErrcode readbyte(struct volio *volio, const goffset offset, guint8 *byte);
 VErrcode readinto(struct volio *volio, const goffset offset, const gsize size,
-	gpointer container);
+                  gpointer container);
 
 #endif
