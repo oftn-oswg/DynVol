@@ -492,12 +492,12 @@ struct volfilelist vol_get_filelist(VOL handle)
     struct volfilelist filelist;
     guint i;
     gchar *filename;
-    filelist.filelist = g_malloc(vhnd->footer.filenames.data->len * sizeof(gchar*));
-    filelist.len = vhnd->footer.filenames.data->len;
-    for(i = 0; i < vhnd->footer.filenames.data->len; i++)
+    filelist.filelist = g_malloc(vhnd->files->len * sizeof(gchar*));
+    filelist.len = vhnd->files->len;
+    for(i = 0; i < vhnd->files->len; i++)
     {
-        filelist.filelist[i] = g_strdup((gchar*)g_ptr_array_index(
-                                            vhnd->footer.filenames.data,i));
+        struct vfile *file = (struct vfile*)g_ptr_array_index(vhnd->files, i);
+        filelist.filelist[i] = g_strdup(file->path);
     }
     return filelist;
 }
