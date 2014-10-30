@@ -135,4 +135,6 @@ void printfiles(gpointer file, gpointer count)
     (*(guint*)count)++;
     struct vfile* vfile = (struct vfile*)file;
     log_info("\tFile %u: %s", (*(guint*)count), vfile->path);
+    if (g_strcmp0(vfile->path, vfile->path_canonical))
+        log_info("\t\t (%s)", vfile->path_canonical);
 }
