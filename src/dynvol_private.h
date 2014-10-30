@@ -48,6 +48,7 @@ volstruct vval {
 
 volstruct vfile {
     gchar *path;
+    gchar *path_canonical;
     gchar *name;
     gchar *dir;
     guint32 size;

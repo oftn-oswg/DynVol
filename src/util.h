@@ -15,10 +15,10 @@
 #include <glib.h>
 
 
-/* Replaces back/forward slashes and invalid characters
- * Standardizes path
- * (not really, all it does ATM is replace backslashes)
- * Should be g_free()'d when done
+/* This function does its best to canonicalize the internal path strings.
+ * We may need a different version for Windoze.
+ *
+ * Should be g_free()'d when done.'
  */
 gchar* sanitizepath(const gchar* dirtypath);
 

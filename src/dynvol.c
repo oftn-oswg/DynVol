@@ -358,23 +358,25 @@ VErrcode vol_getfilenames(VOL handle)
             {
                 j++;
                 log_debug("String at offset 0x%lx indexed. Size is %d. Pulling now.", os, j);
-                gchar *data, *datacopy1, *datacopy2;
+                gchar *data, *sanitary, *pathcopy1, *pathcopy2;
                 curfile = (struct vfile*)g_malloc(sizeof(struct vfile));
                 curfile->data.data = NULL;
                 data = readpart(&vhnd->volio, (guint64)os, sizeof(gchar)*j);
+                sanitary = sanitizepath(data);
                 log_debug("Pulled string: %s.", data);
                 i++;
                 os+=j;
                 j=0;
                 log_debug("Adding string to arrays.");
-                datacopy1 = g_strdup(data);
-                datacopy2 = g_strdup(data);
+                pathcopy1 = g_strdup(sanitary);
+                pathcopy2 = g_strdup(sanitary);
                 g_ptr_array_add(vhnd->footer.filenames.data, (gpointer)data);
                 curfile->path = g_strdup(data);
-                curfile->name = g_strdup(basename(datacopy1));
-                curfile->dir = g_strdup(dirname(datacopy1));
-                g_free(datacopy1);
-                g_free(datacopy2);
+                curfile->path_canonical = sanitary;
+                curfile->name = g_strdup(basename(pathcopy1));
+                curfile->dir = g_strdup(dirname(pathcopy2));
+                g_free(pathcopy1);
+                g_free(pathcopy2);
                 g_ptr_array_add(vhnd->files, (gpointer)curfile);
                 l++;
             } else if (bite == 0x5C) {
@@ -508,6 +510,8 @@ void vol_filesarray_free(gpointer file)
         g_free(vfile->data.data);
     if (vfile->path != NULL)
         g_free(vfile->path);
+    if (vfile->path_canonical != NULL)
+        g_free(vfile->path_canonical);
     if (vfile->name != NULL)
         g_free(vfile->name);
     if (vfile->dir != NULL)
