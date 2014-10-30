@@ -130,8 +130,9 @@ gchar* sanitizepath(const gchar* dirtypath)
  * ..     Indicates parent directory. We should strip this and the previous directory out.
  */
 
-void printfiles(gpointer name, gpointer count)
+void printfiles(gpointer file, gpointer count)
 {
     (*(guint*)count)++;
-    log_info("\tFile %u: %s", (*(guint*)count), (gchar*)name);
+    struct vfile* vfile = (struct vfile*)file;
+    log_info("\tFile %u: %s", (*(guint*)count), vfile->path);
 }
