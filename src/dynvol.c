@@ -225,7 +225,7 @@ VErrcode vol_getmetadata(VOL handle)
      * There might be a memory leak here
      */
 
-    if (memcmp((gchar[]) { ' ', 'V', 'O', 'L' }, vhnd->header.ident, 4) == 0)
+    if (memcmp(" VOL", vhnd->header.ident, 4) == 0)
     {
         log_debug("Magic number recognized. Archive is Starsiege volume.");
     } else if (memcmp("PVOL", vhnd->header.ident, 4) == 0) {
