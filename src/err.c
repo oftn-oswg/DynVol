@@ -42,6 +42,9 @@ VErr vol_get_error(VOL handle)
             g_stpcpy(ret.message, "Archive is either invalid or an unrecognized format");
             /* we may be able to provide more information here */
             break;
+        case VERR_UNRRECOGNIZED_HEADER:
+            g_stpcpy(ret.message, "A header within the archive did not contain the expected identifier");
+            break;
         case VERR_UNEXPECTED_EOF:
             g_stpcpy(ret.message, "Unexpected end of file");
             break;

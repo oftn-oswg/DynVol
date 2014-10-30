@@ -194,21 +194,6 @@ VErrcode vol_getfooter(VOL handle)
     struct volume* vhnd = handle;
     log_info("Fetching volume footer.");
     vhnd->footer.unknown_vstr.offset = vhnd->header.val;
-    /* In some cases the header values point to the end of their array, rather
-     * than at the beginning of the next array.
-     * Since headers are 4-byte aligned inside the volume file, we can ensure
-     * that our offsets are also multiples of four.
-     * By rounding our offsets /up/ to the nearest interval of four, we can
-     * get rid of most of the problems these header values can cause.
-     * This does not cover the case of padding between arrays in excess of
-     * four bytes. This may be on the todo list for a while though, as seeing
-     * this much padding in this format of the vol archive is unheard of.
-     */
-    if((vhnd->footer.unknown_vstr.offset % 4) != 0)
-    {
-        vhnd->footer.unknown_vstr.offset += (4 - (vhnd->footer.unknown_vstr.offset %
-                                             4));
-    }
 
     /* TODO: figure out what these are for
      * TODO: figure out if content format varies from the other arrays
@@ -261,60 +246,84 @@ VErrcode vol_getmetadata(VOL handle)
 
 VErrcode vol_getvstr(VOL handle)
 {
+    guint i;
+    VErrcode err;
     /* gets header only */
     struct volume* vhnd = handle;
     log_info("Fetching string array.");
     log_debug("Scraping array header.");
-    VErrcode err = vol_getheader(handle, &vhnd->footer.unknown_vstr.header,
-                                 vhnd->footer.unknown_vstr.offset);
-    if (err)
-        return err;
 
-    /* Header verification
-     * There might be a memory leak here
-     */
-    if (memcmp("vols", vhnd->footer.unknown_vstr.header.ident, 4))
+    for (i=0; i <=4; i++)
+    {
+        err = vol_getheader(handle, &vhnd->footer.unknown_vstr.header,
+                                     vhnd->footer.unknown_vstr.offset + i);
+        if (err)
+            return err;
+
+        /* Header verification
+         * There might be a memory leak here
+         */
+        if (memcmp("vols", vhnd->footer.unknown_vstr.header.ident, 4))
+        {
+            log_debug("Retrieved IDstring does not matched needed IDstring.");
+            err = VERR_UNRRECOGNIZED_HEADER;
+        } else {
+            vhnd->footer.unknown_vstr.offset += i;
+            err = VERR_OK;
+            break;
+        }
+    }
+    if (err == VERR_UNRRECOGNIZED_HEADER)
     {
         log_warning("Array identity string not recognized.");
+        err = VERR_OK;
         /* Not setting error here, at least not yet */
     }
     log_info("Skipping contents of unknown array.");
     vhnd->footer.unknown_vstr.data = NULL;
     vhnd->footer.unknown_vval.offset = vhnd->footer.unknown_vstr.offset+sizeof(
                                            struct header)+vhnd->footer.unknown_vstr.header.val;
-    if((vhnd->footer.unknown_vval.offset % 4) != 0)
-    {
-        vhnd->footer.unknown_vval.offset += (4 - (vhnd->footer.unknown_vval.offset %
-                                             4));
-    }
     return err;
 }
 
 VErrcode vol_getvval(VOL handle)
 {
+    guint i;
+    VErrcode err;
     /* gets header only */
     struct volume* vhnd = handle;
     log_info("Fetching value set array.");
     log_debug("Scraping array header.");
-    VErrcode err = vol_getheader(handle, &vhnd->footer.unknown_vval.header,
-                                 vhnd->footer.unknown_vval.offset);
-    if (err)
-        return err;
+    for (i=0; i <=4; i++)
+    {
+        err = vol_getheader(handle, &vhnd->footer.unknown_vval.header,
+                                     vhnd->footer.unknown_vval.offset + i);
+        if (err)
+            return err;
 
-    /* Header verification
-     * There might be a memory leak here
-     */
-    if (memcmp("voli", vhnd->footer.unknown_vval.header.ident, 4))
+        /* Header verification
+         * There might be a memory leak here
+         */
+        if (memcmp("voli", vhnd->footer.unknown_vval.header.ident, 4))
+        {
+            log_debug("Retrieved IDstring does not matched needed IDstring.");
+            err = VERR_UNRRECOGNIZED_HEADER;
+        } else {
+            vhnd->footer.unknown_vval.offset += i;
+            err = VERR_OK;
+            break;
+        }
+    }
+    if (err == VERR_UNRRECOGNIZED_HEADER)
     {
         log_critical("Array identity string not recognized.");
+        err = VERR_OK;
         /* Not setting error here, at least not yet */
     }
     log_info("Skipping contents of unknown array.");
     vhnd->footer.unknown_vval.data = NULL;
     vhnd->footer.filenames.offset = vhnd->footer.unknown_vval.offset+sizeof(
                                         struct header)+vhnd->footer.unknown_vval.header.val;
-    if((vhnd->footer.filenames.offset % 4) != 0)
-        vhnd->footer.filenames.offset += (4 - (vhnd->footer.filenames.offset % 4));
     return err;
 }
 
@@ -326,18 +335,31 @@ VErrcode vol_getfilenames(VOL handle)
     guint64 os;
     os = vhnd->footer.filenames.offset;
     gint i, j = 0, l = 0;
+    VErrcode err;
     gchar* datadir;
     guint8 bite;
     log_debug("Scraping array header.");
-    VErrcode err = vol_getheader(handle, &vhnd->footer.filenames.header,
-                                 vhnd->footer.filenames.offset);
-    if (err)
-        return err;
+    for (i=0; i <=4; i++)
+    {
+        err = vol_getheader(handle, &vhnd->footer.filenames.header,
+                                     vhnd->footer.filenames.offset + i);
+        if (err)
+            return err;
 
-    /* Header verification
-     * There might be a memory leak here
-     */
-    if (memcmp("vols", vhnd->footer.filenames.header.ident, 4))
+        /* Header verification
+         * There might be a memory leak here
+         */
+        if (memcmp("vols", vhnd->footer.filenames.header.ident, 4))
+        {
+            log_debug("Retrieved IDstring does not matched needed IDstring.");
+            err = VERR_UNRRECOGNIZED_HEADER;
+        } else {
+            vhnd->footer.filenames.offset += i;
+            err = VERR_OK;
+            break;
+        }
+    }
+    if (err == VERR_UNRRECOGNIZED_HEADER)
     {
         log_critical("Array identity string not recognized.");
         return VERR_BROKEN_ARCHIVE;
@@ -396,10 +418,6 @@ VErrcode vol_getfilenames(VOL handle)
     }
     vhnd->footer.fileprops.offset = vhnd->footer.filenames.header.val
                                     +vhnd->footer.filenames.offset+sizeof(struct header);
-    if((vhnd->footer.fileprops.offset % 4) != 0)
-    {
-        vhnd->footer.fileprops.offset += (4 - (vhnd->footer.fileprops.offset % 4));
-    }
     return err;
 }
 
@@ -411,18 +429,37 @@ VErrcode vol_getfileprops(VOL handle)
     guint64 os;
     os = vhnd->footer.fileprops.offset;
     gint i;
+    guint c;
+    VErrcode err;
     guint o;
     log_debug("Scraping array header.");
-    VErrcode err = vol_getheader(handle, &vhnd->footer.fileprops.header,
-                                 vhnd->footer.fileprops.offset);
-    if (err)
-        return err;
+    for (i=0; i <=4; i++)
+    {
+        err = vol_getheader(handle, &vhnd->footer.fileprops.header,
+                                     vhnd->footer.fileprops.offset + i);
+        if (err)
+            return err;
 
-    /* Header verification
-     * There might be a memory leak here
-     */
-    if (memcmp("voli", vhnd->footer.fileprops.header.ident, 4))
+        /* Header verification
+         * There might be a memory leak here
+         */
+        if (memcmp("voli", vhnd->footer.fileprops.header.ident, 4))
+        {
+            log_debug("Retrieved IDstring does not matched needed IDstring.");
+            err = VERR_UNRRECOGNIZED_HEADER;
+        } else {
+            vhnd->footer.fileprops.offset += i;
+            os += i;
+            err = VERR_OK;
+            break;
+        }
+    }
+    if (err == VERR_UNRRECOGNIZED_HEADER)
+    {
         log_critical("Array identity string not recognized.");
+        err = VERR_OK;
+        /* Not setting error here, at least not yet */
+    }
     if (vhnd->footer.fileprops.header.val != 0)
     {
         os +=sizeof(struct header);
@@ -442,9 +479,31 @@ VErrcode vol_getfileprops(VOL handle)
                 return err;
 
             log_info("Scraping VBLK header.");
-            err = vol_getheader(handle, &vfile->data.header, propset->field_3);
-            if (err)
-                return err;
+            for (c=0; c <=4; c++)
+            {
+                err = vol_getheader(handle, &vfile->data.header, propset->field_3 + c);
+                if (err)
+                    return err;
+
+                /* Header verification
+                 * There might be a memory leak here
+                 */
+                if (memcmp("VBLK", &vfile->data.header.ident, 4))
+                {
+                    log_debug("Retrieved IDstring does not matched needed IDstring.");
+                    err = VERR_UNRRECOGNIZED_HEADER;
+                } else {
+                    propset->field_3 += c;
+                    err = VERR_OK;
+                    break;
+                }
+            }
+            if (err == VERR_UNRRECOGNIZED_HEADER)
+            {
+                log_warning("Array identity string not recognized.");
+                err = VERR_OK;
+                /* Not setting error here, at least not yet */
+            }
 
             log_info("Values pulled:");
 
