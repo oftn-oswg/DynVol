@@ -27,6 +27,7 @@ int printhelp()
     g_print("    expression is a filter for the returned file list. * and ? work.\n");
     g_print("    file matches the volumes whose contents you want to list.\n\n");
     g_print("Options:\n");
+    g_print("    -p      Canonicalize paths.\n\n");
     g_print("    -v      Increase verbosity. Can be specified up to five times.\n\n");
 
 }
@@ -40,15 +41,19 @@ int main(int argc, char** argv)
     gchar *expr, *volname;
     VOL volhandle;
     GPatternSpec *internalglob;
+    gboolean canonicalize = FALSE;
     GPtrArray *volpaths =  g_ptr_array_new_with_free_func(g_free);
     struct volfilelist vfiles;
     g_log_set_handler(G_LOG_DOMAIN, vol_levelmask, logfunc, NULL);
     if (argc < 3)
         printhelp();
 
-    while((a = getopt(argc, argv, "v")) != -1) {
+    while((a = getopt(argc, argv, "pv")) != -1) {
         switch(a)
         {
+            case 'p':
+                canonicalize = TRUE;
+                break;
             case 'v':
                 vcount++;
                 g_print("-v detected\n");
@@ -108,7 +113,7 @@ int main(int argc, char** argv)
             volname = g_strdup((gchar*)g_ptr_array_index(volpaths,i));
             g_print("%s\n", (gchar*)basename(volname));
             g_free(volname);
-            vfiles = vol_get_filelist(volhandle);
+            vfiles = vol_get_filelist(volhandle, canonicalize);
             internalglob = g_pattern_spec_new(expr);
             for (j = 0; j < vfiles.len; j++)
             {

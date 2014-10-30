@@ -93,7 +93,7 @@ struct volfilelist {
  *
  * Returns a volfilenames struct containing the filenames within the volume.
  **/
-struct volfilelist vol_get_filelist(VOL handle);
+struct volfilelist vol_get_filelist(VOL handle, gboolean canonicalize);
 
 
 void vol_set_debug(guint mask);

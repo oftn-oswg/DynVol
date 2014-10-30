@@ -486,7 +486,7 @@ VErrcode vol_getfileprops(VOL handle)
     return err;
 }
 
-struct volfilelist vol_get_filelist(VOL handle)
+struct volfilelist vol_get_filelist(VOL handle, gboolean canonicalized)
 {
     struct volume* vhnd = handle;
     struct volfilelist filelist;
@@ -497,7 +497,10 @@ struct volfilelist vol_get_filelist(VOL handle)
     for(i = 0; i < vhnd->files->len; i++)
     {
         struct vfile *file = (struct vfile*)g_ptr_array_index(vhnd->files, i);
-        filelist.filelist[i] = g_strdup(file->path);
+        if (canonicalized)
+            filelist.filelist[i] = g_strdup(file->path_canonical);
+        else
+            filelist.filelist[i] = g_strdup(file->path);
     }
     return filelist;
 }
