@@ -588,3 +588,9 @@ void vol_set_debug(guint mask)
     log_todo("Set default logging level.");
     log_todo("Potentially handle logging level per volume?");
 }
+
+void temp_vol_test_rleout(VOL handle)
+{
+    struct volume* vhnd = handle;
+    copyout(&vhnd->volio, (struct vfile*)g_ptr_array_index(vhnd->files, 0));
+}

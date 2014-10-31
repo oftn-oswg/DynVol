@@ -26,6 +26,7 @@ typedef enum {
     VERR_OK= 0,
     VERR_UNKNOWN,
     VERR_FILE_NOT_FOUND,
+    VERR_DESTINATION_FILE_PRESENT,
     VERR_ARCHIVE_UNRECOGNIZED,
     VERR_UNSUPPORTED_ARCHIVE,
     VERR_BROKEN_ARCHIVE,
@@ -125,8 +126,14 @@ enum vol_loglevels {
     VOL_LOG_LEVEL_MASK = ~(VOL_LOG_LEVEL_MOREDEBUG | VOL_LOG_LEVEL_TODO | VOL_LOG_LEVEL_FIXME | VOL_LOG_LEVEL_DEBUG | VOL_LOG_LEVEL_INFO)
 };
 
-
-
+/**
+ * temp_vol_test_rleout
+ * @handle: A volume handle as returned by vol_load
+ *
+ * Extracts the first file found in the volume.
+ * This function is temporary, for obvious reasons.
+ **/
+void temp_vol_test_rleout(VOL handle);
 
 
 #ifdef __cplusplus

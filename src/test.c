@@ -27,6 +27,10 @@ int main(int argc, char** argv)
     volhandle =
         vol_load("/home/swooshy/devstuff/ss/vol/Starsiege/samples/set6/foldertest1.vol");
     vol_unload(volhandle);
+    volhandle =
+        vol_load("/home/swooshy/devstuff/ss/vol/Starsiege/samples/set1/rletest.vol");
+    temp_vol_test_rleout(volhandle);
+    vol_unload(volhandle);
     volhandle = vol_load("/this/file/doesnt/exist.vol");
     VErr err = vol_get_error(volhandle);
     int i;

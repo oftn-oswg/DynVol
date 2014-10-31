@@ -15,6 +15,11 @@
 
 /* IO stuff */
 
+struct rleio {
+	GFile *identifier;
+	GFileOutputStream *writestream;
+};
+
 /* Should be g_free()'d when done */
 gchar* readpart(struct volio *volio, const goffset offset,
                 const guint64 bytes);
@@ -22,5 +27,7 @@ gchar* readpart(struct volio *volio, const goffset offset,
 VErrcode readbyte(struct volio *volio, const goffset offset, guint8 *byte);
 VErrcode readinto(struct volio *volio, const goffset offset, const gsize size,
                   gpointer container);
+
+VErrcode copyout(struct volio *volio, struct vfile *vfile);
 
 #endif
