@@ -16,6 +16,13 @@
 
 #define volstruct struct __attribute__((__packed__))
 
+typedef enum {
+    VFMT_STARSIEGE= 0,
+    VFMT_TRIBES,
+    VFMT_UNSUPPORTED,
+    VFMT_LAST
+} VFormat;
+
 volstruct header {
     gchar ident[4];
     guint32 val;
@@ -81,6 +88,7 @@ volstruct volume {
     gboolean writable;
     struct header header;
     struct footer footer;
+    VFormat format;
     VErrcode error;
 };
 

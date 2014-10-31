@@ -191,20 +191,27 @@ VErrcode vol_getheader(VOL handle, struct header *header, const guint32 offset)
 
 VErrcode vol_getfooter(VOL handle)
 {
+    VErrcode err;
     struct volume* vhnd = handle;
     log_info("Fetching volume footer.");
-    vhnd->footer.unknown_vstr.offset = vhnd->header.val;
 
-    /* TODO: figure out what these are for
-     * TODO: figure out if content format varies from the other arrays
-     */
-    VErrcode err = vol_getvstr(handle);
-    if (err)
-        return err;
+    if (vhnd->format == VFMT_STARSIEGE)
+    {
+        vhnd->footer.unknown_vstr.offset = vhnd->header.val;
 
-    err = vol_getvval(handle);
-    if (err)
-        return err;
+        /* TODO: figure out what these are for
+         * TODO: figure out if content format varies from the other arrays
+         */
+        err = vol_getvstr(handle);
+        if (err)
+            return err;
+
+        err = vol_getvval(handle);
+        if (err)
+            return err;
+    } else if (vhnd->format == VFMT_TRIBES) {
+        vhnd->footer.filenames.offset = vhnd->header.val;
+    }
 
 
     err = vol_getfilenames(handle);
@@ -228,13 +235,13 @@ VErrcode vol_getmetadata(VOL handle)
     if (memcmp(" VOL", vhnd->header.ident, 4) == 0)
     {
         log_debug("Magic number recognized. Archive is Starsiege volume.");
+        vhnd->format = VFMT_STARSIEGE;
     } else if (memcmp("PVOL", vhnd->header.ident, 4) == 0) {
         log_debug("Magic number recognized. Archive is Tribes 1 volume.");
-        log_critical("Currently, only Starsiege volumes are supported.");
-        return VERR_UNSUPPORTED_ARCHIVE;
+        vhnd->format = VFMT_TRIBES;
     } else if (memcmp("VOLN", vhnd->header.ident, 4) == 0) {
         log_debug("Magic number recognized. Archive is Earthsiege/Earthsiege 2 volume.");
-        log_critical("Currently, only Starsiege volumes are supported.");
+        log_critical("Currently, only Starsiege and Starsiege Tribes volumes are supported.");
         return VERR_UNSUPPORTED_ARCHIVE;
     } else {
         log_critical("Magic number not recognized.");
