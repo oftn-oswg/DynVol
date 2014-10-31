@@ -35,7 +35,7 @@ gchar* sanitizepath(const gchar* dirtypath)
         {
             log_moredebug("Slash (or end of string) found at index %u.", i);
             /* Skip if at beginning of path or duplicate */
-            if ((i - componentoffset == 0) && (i =! strlen(dirtypath)))
+            if ((i == componentoffset) && (i != strlen(dirtypath)))
             {
                 log_moredebug("Slash was duplicate or at beginning of string. Ignoring.");
                 componentoffset++;
@@ -56,6 +56,7 @@ gchar* sanitizepath(const gchar* dirtypath)
             g_ptr_array_add(path, (gpointer)component);
             componentoffset = i + 1;
         }
+
     }
 
     /* Now we handle any instances of "." or ".." */
