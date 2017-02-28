@@ -4,10 +4,17 @@ ACLOCAL_AMFLAGS = -I src/tools
 
 SUBDIRS = src
 
-MAINTAINERCLEANFILES = Makefile.in aclocal.m4 configure \
-                       ltmain.sh acinclude.m4 Makefile
+dist_doc_DATA = README.md \
+                LICENSE.md
 
+noinst_SCRIPTS = autogen.sh
 
+MAINTAINERCLEANFILES = Makefile.in \
+                       aclocal.m4 \
+                       configure \
+                       ltmain.sh \
+                       acinclude.m4 \
+                       Makefile
 
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
