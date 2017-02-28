@@ -1,6 +1,6 @@
 ## Process this file with automake to produce Makefile.in
 
-ACLOCAL_AMFLAGS = -I src/tools
+ACLOCAL_AMFLAGS = -I autotools
 
 SUBDIRS = src
 
@@ -20,4 +20,4 @@ maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
 	-rm -f Makefile
-	-rm -rf $(top_srcdir)/src/tools
+	-rm -rf $(top_srcdir)/autotools

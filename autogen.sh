@@ -7,7 +7,7 @@ olddir=`pwd`
 srcdir=`dirname $0`
 test -z "$srcdir" && srcdir=.
 
-auxdir="$srcdir/src/tools"
+auxdir="$srcdir/autotools"
 
 if [ ! -d "$auxdir" ]
 then

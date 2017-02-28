@@ -6,8 +6,8 @@ AC_INIT([DynVol], [0.0.2], [root@swooshalicio.us],
                      [libdynvol], [https://github.com/oftn-oswg/DynVol])
 AC_CONFIG_SRCDIR([src/dynvol_private.h])
 AC_REVISION([$Revision: 0.2 $])
-AC_CONFIG_AUX_DIR([src/tools])
-AC_CONFIG_MACRO_DIR([src/tools])
+AC_CONFIG_AUX_DIR([autotools])
+AC_CONFIG_MACRO_DIR([autotools])
 AM_INIT_AUTOMAKE([foreign])
 
 # Checks for programs.
