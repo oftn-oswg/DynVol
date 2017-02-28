@@ -13,6 +13,7 @@
 #include <glib.h>
 #include <unistd.h>
 #include <string.h>
+#include <libgen.h>
 
 #ifdef G_LOG_DOMAIN
  #undef G_LOG_DOMAIN
@@ -63,7 +64,7 @@ int main(int argc, char** argv)
         }
     }
 
-    if (argc < optind + 2)
+    if (argc >= 3 && argc < optind + 2)
         printhelp();
 
     expr = argv[optind];
@@ -97,18 +98,9 @@ int main(int argc, char** argv)
         g_debug("Getting file list for %s\n",
                 (gchar*)g_ptr_array_index(volpaths,i));
         volhandle = vol_open((gchar*)g_ptr_array_index(volpaths,i));
-        vol_error_t err = vol_get_error(volhandle);
-        if (err.code != 0)
-        {
-            for (j = 0; j < 128; j++)
-            {
-                if (err.message[j] == 0x00)
-                    break;
-                else
-                    g_print("%c", err.message[j]);
-            }
-            g_print("\n");
-            break;
+        vol_err_t err = vol_get_error(volhandle);
+        if (err) {
+            printf("Error %s\n", vol_strerror(err));
         } else {
             volname = g_strdup((gchar*)g_ptr_array_index(volpaths,i));
             g_print("%s\n", (gchar*)basename(volname));

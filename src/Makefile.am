@@ -5,8 +5,10 @@ AM_CFLAGS := $(GLIB_CFLAGS) $(GIO_LIBS) $(AM_FLAGS)
 lib_LTLIBRARIES = libdynvol.la
 
 # qtcreator is weird about headers in autotools projects so we do this to force
-# it to list them. This causes automake to generate some warnings
-includes_SOURCES    = dynvol.h
+# it to list them.
+includes_SOURCES    = dynvol.h \
+                      vol_err.h \
+                      vol_err_defs.h
 privheaders_SOURCES = dynvol_private.h \
                       io.h \
                       logging.h \
@@ -14,11 +16,11 @@ privheaders_SOURCES = dynvol_private.h \
 pkginclude_HEADERS  = $(includes_SOURCES)
 noinst_HEADERS      = $(privheaders_SOURCES)
 
-libdynvol_la_SOURCES = err.c \
-                       dynvol.c \
+libdynvol_la_SOURCES = dynvol.c \
                        util.c \
                        io.c \
-                       logging.c
+                       logging.c \
+                       vol_err.c
 libdynvol_la_LDFLAGS = -version-info 0:2:0
 libdynvol_la_LIBADD  = $(GLIB_LIBS) $(GIO_LIBS)
 libdynvol_la_CFLAGS  = -DG_LOG_DOMAIN=\"DynVol\" $(AM_CFLAGS)

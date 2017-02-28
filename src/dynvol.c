@@ -42,7 +42,7 @@ vol_t vol_open(const gchar* path)
     handle->files = NULL;
     handle->open = FALSE;
     handle->writable = FALSE;
-    handle->error = VERR_OK;
+    handle->error = VOL_ERR_OK;
 
     /* Volume io */
     handle->volio.identifier = NULL;
@@ -85,11 +85,11 @@ vol_t vol_open(const gchar* path)
     {
         log_critical("Volumme %s does not exist. Creation of new volumes not yet supported.",
                      path);
-        handle->error = VERR_FILE_NOT_FOUND;
+        handle->error = VOL_ERR_NOENT;
         return (gpointer)handle;
     } else if (!g_file_test (path, G_FILE_TEST_IS_REGULAR)) {
         log_error("Cannot open %s.", path);
-        handle->error = VERR_UNKNOWN;
+        handle->error = VOL_ERR_OPEN;
         return (gpointer)handle;
     }
     log_debug("Attempting to open %s", path);
@@ -107,7 +107,7 @@ vol_t vol_open(const gchar* path)
     if (!handle->volio.readstream)
     {
         log_error("Failed opening %s\n\t%s", path, error->message);
-        handle->error = VERR_UNKNOWN;
+        handle->error = VOL_ERR_OPEN;
         return (gpointer)handle;
     }
     handle->open = TRUE;
@@ -120,8 +120,8 @@ vol_t vol_open(const gchar* path)
     ret = g_io_channel_set_encoding(handle->volio, NULL, &error);
     if (ret != G_IO_STATUS_NORMAL)
     {
-    	log_warning("Failed setting encoding for %s\n\t%s", path,
-    				error->message);
+        log_warning("Failed setting encoding for %s\n\t%s", path,
+                    error->message);
     }
     */
 
@@ -138,7 +138,7 @@ void vol_close(vol_t handle)
     GIOStatus ret = G_IO_STATUS_NORMAL;
     GError *error = NULL;
 
-    if (!(g_input_stream_close(vhnd->volio.readstream, NULL, &error)))
+    if (!(g_input_stream_close(G_INPUT_STREAM(vhnd->volio.readstream), NULL, &error)))
         log_critical("Couldn't close input stream:\t%s", error->message);
 
     log_debug("Freeing readstream");
@@ -176,11 +176,11 @@ void vol_close(vol_t handle)
 
 }
 
-VErrcode vol_getheader(vol_t handle, struct header *header, const guint32 offset)
+vol_err_t vol_getheader(vol_t handle, struct header *header, const guint32 offset)
 {
     struct volume* vhnd = handle;
     log_info("Fetching header");
-    VErrcode err = readinto(&vhnd->volio, offset,
+    vol_err_t err = readinto(&vhnd->volio, offset,
                             (gsize)sizeof(struct header), (gpointer)header);
     log_debug("Got header:");
     log_debug("\tIDstring: %c%c%c%c", header->ident[0], header->ident[1],
@@ -189,9 +189,9 @@ VErrcode vol_getheader(vol_t handle, struct header *header, const guint32 offset
     return err;
 }
 
-VErrcode vol_getfooter(vol_t handle)
+vol_err_t vol_getfooter(vol_t handle)
 {
-    VErrcode err;
+    vol_err_t err;
     struct volume* vhnd = handle;
     log_info("Fetching volume footer.");
 
@@ -220,11 +220,11 @@ VErrcode vol_getfooter(vol_t handle)
     return vol_getfileprops(handle);
 }
 
-VErrcode vol_getmetadata(vol_t handle)
+vol_err_t vol_getmetadata(vol_t handle)
 {
     struct volume* vhnd = handle;
     log_info("Fetching volume metadata.");
-    VErrcode err = vol_getheader(handle, &vhnd->header, 0);
+    vol_err_t err = vol_getheader(handle, &vhnd->header, 0);
     if (err)
         return err;
 
@@ -242,19 +242,19 @@ VErrcode vol_getmetadata(vol_t handle)
     } else if (memcmp("VOLN", vhnd->header.ident, 4) == 0) {
         log_debug("Magic number recognized. Archive is Earthsiege/Earthsiege 2 volume.");
         log_critical("Currently, only Starsiege and Starsiege Tribes volumes are supported.");
-        return VERR_UNSUPPORTED_ARCHIVE;
+        return VOL_ERR_UNSUPFORMAT;
     } else {
         log_critical("Magic number not recognized.");
-        return VERR_ARCHIVE_UNRECOGNIZED;
+        return VOL_ERR_NOTVOL;
     }
 
     return vol_getfooter(handle);
 }
 
-VErrcode vol_getvstr(vol_t handle)
+vol_err_t vol_getvstr(vol_t handle)
 {
     guint i;
-    VErrcode err;
+    vol_err_t err;
     /* gets header only */
     struct volume* vhnd = handle;
     log_info("Fetching string array.");
@@ -273,17 +273,17 @@ VErrcode vol_getvstr(vol_t handle)
         if (memcmp("vols", vhnd->footer.unknown_vstr.header.ident, 4))
         {
             log_debug("Retrieved IDstring does not matched needed IDstring.");
-            err = VERR_UNRRECOGNIZED_HEADER;
+            err = VOL_ERR_BADHEADER;
         } else {
             vhnd->footer.unknown_vstr.offset += i;
-            err = VERR_OK;
+            err = VOL_ERR_OK;
             break;
         }
     }
-    if (err == VERR_UNRRECOGNIZED_HEADER)
+    if (err == VOL_ERR_BADHEADER)
     {
         log_warning("Array identity string not recognized.");
-        err = VERR_OK;
+        err = VOL_ERR_OK;
         /* Not setting error here, at least not yet */
     }
     log_info("Skipping contents of unknown array.");
@@ -293,10 +293,10 @@ VErrcode vol_getvstr(vol_t handle)
     return err;
 }
 
-VErrcode vol_getvval(vol_t handle)
+vol_err_t vol_getvval(vol_t handle)
 {
     guint i;
-    VErrcode err;
+    vol_err_t err;
     /* gets header only */
     struct volume* vhnd = handle;
     log_info("Fetching value set array.");
@@ -314,17 +314,17 @@ VErrcode vol_getvval(vol_t handle)
         if (memcmp("voli", vhnd->footer.unknown_vval.header.ident, 4))
         {
             log_debug("Retrieved IDstring does not matched needed IDstring.");
-            err = VERR_UNRRECOGNIZED_HEADER;
+            err = VOL_ERR_BADHEADER;
         } else {
             vhnd->footer.unknown_vval.offset += i;
-            err = VERR_OK;
+            err = VOL_ERR_OK;
             break;
         }
     }
-    if (err == VERR_UNRRECOGNIZED_HEADER)
+    if (err == VOL_ERR_BADHEADER)
     {
         log_critical("Array identity string not recognized.");
-        err = VERR_OK;
+        err = VOL_ERR_OK;
         /* Not setting error here, at least not yet */
     }
     log_info("Skipping contents of unknown array.");
@@ -334,7 +334,7 @@ VErrcode vol_getvval(vol_t handle)
     return err;
 }
 
-VErrcode vol_getfilenames(vol_t handle)
+vol_err_t vol_getfilenames(vol_t handle)
 {
     struct volume* vhnd = handle;
     struct vfile *curfile;
@@ -342,7 +342,7 @@ VErrcode vol_getfilenames(vol_t handle)
     guint64 os;
     os = vhnd->footer.filenames.offset;
     gint i, j = 0, l = 0;
-    VErrcode err;
+    vol_err_t err;
     gchar* datadir;
     guint8 bite;
     log_debug("Scraping array header.");
@@ -359,17 +359,17 @@ VErrcode vol_getfilenames(vol_t handle)
         if (memcmp("vols", vhnd->footer.filenames.header.ident, 4))
         {
             log_debug("Retrieved IDstring does not matched needed IDstring.");
-            err = VERR_UNRRECOGNIZED_HEADER;
+            err = VOL_ERR_BADHEADER;
         } else {
             vhnd->footer.filenames.offset += i;
-            err = VERR_OK;
+            err = VOL_ERR_OK;
             break;
         }
     }
-    if (err == VERR_UNRRECOGNIZED_HEADER)
+    if (err == VOL_ERR_BADHEADER)
     {
         log_critical("Array identity string not recognized.");
-        return VERR_BROKEN_ARCHIVE;
+        return VOL_ERR_BROKEN;
     }
     if (vhnd->footer.filenames.header.val != 0)
     {
@@ -428,7 +428,7 @@ VErrcode vol_getfilenames(vol_t handle)
     return err;
 }
 
-VErrcode vol_getfileprops(vol_t handle)
+vol_err_t vol_getfileprops(vol_t handle)
 {
     struct volume* vhnd = handle;
     struct vfile *vfile;
@@ -437,7 +437,7 @@ VErrcode vol_getfileprops(vol_t handle)
     os = vhnd->footer.fileprops.offset;
     gint i;
     guint c;
-    VErrcode err;
+    vol_err_t err;
     guint o;
     log_debug("Scraping array header.");
     for (i=0; i <=4; i++)
@@ -453,18 +453,18 @@ VErrcode vol_getfileprops(vol_t handle)
         if (memcmp("voli", vhnd->footer.fileprops.header.ident, 4))
         {
             log_debug("Retrieved IDstring does not matched needed IDstring.");
-            err = VERR_UNRRECOGNIZED_HEADER;
+            err = VOL_ERR_BADHEADER;
         } else {
             vhnd->footer.fileprops.offset += i;
             os += i;
-            err = VERR_OK;
+            err = VOL_ERR_OK;
             break;
         }
     }
-    if (err == VERR_UNRRECOGNIZED_HEADER)
+    if (err == VOL_ERR_BADHEADER)
     {
         log_critical("Array identity string not recognized.");
-        err = VERR_OK;
+        err = VOL_ERR_OK;
         /* Not setting error here, at least not yet */
     }
     if (vhnd->footer.fileprops.header.val != 0)
@@ -498,17 +498,17 @@ VErrcode vol_getfileprops(vol_t handle)
                 if (memcmp("VBLK", &vfile->data.header.ident, 4))
                 {
                     log_debug("Retrieved IDstring does not matched needed IDstring.");
-                    err = VERR_UNRRECOGNIZED_HEADER;
+                    err = VOL_ERR_BADHEADER;
                 } else {
                     propset->field_3 += c;
-                    err = VERR_OK;
+                    err = VOL_ERR_OK;
                     break;
                 }
             }
-            if (err == VERR_UNRRECOGNIZED_HEADER)
+            if (err == VOL_ERR_BADHEADER)
             {
                 log_warning("Array identity string not recognized.");
-                err = VERR_OK;
+                err = VOL_ERR_OK;
                 /* Not setting error here, at least not yet */
             }
 

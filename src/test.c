@@ -25,23 +25,17 @@ int main(int argc, char** argv)
     vol_set_debug(vol_levelmask);
     vol_t volhandle;
     volhandle =
-        vol_open("/home/swooshy/devstuff/ss/vol/Starsiege/samples/set6/foldertest1.vol");
+        vol_open("/home/swooshy/devstuff/libdynvol/DynVol/Starsiege/samples/set6/foldertest1.vol");
     vol_close(volhandle);
     volhandle =
-        vol_open("/home/swooshy/devstuff/ss/vol/Starsiege/samples/set1/rletest.vol");
+        vol_open("/home/swooshy/devstuff/libdynvol/DynVol/Starsiege/samples/set1/rletest.vol");
     temp_vol_test_rleout(volhandle);
     vol_close(volhandle);
     volhandle = vol_open("/this/file/doesnt/exist.vol");
-    vol_error_t err = vol_get_error(volhandle);
-    int i;
-    for (i = 0; i < 128; i++)
-    {
-        if (err.message[i] == 0x00)
-            break;
-        else
-            printf("%c", err.message[i]);
+    vol_err_t err = vol_get_error(volhandle);
+    if (err) {
+        printf("Error %s\n", vol_strerror(err));
     }
-    printf("\n");
     return 0;
 
 }

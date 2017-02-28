@@ -24,10 +24,10 @@ struct rleio {
 gchar* readpart(struct volio *volio, const goffset offset,
                 const guint64 bytes);
 
-VErrcode readbyte(struct volio *volio, const goffset offset, guint8 *byte);
-VErrcode readinto(struct volio *volio, const goffset offset, const gsize size,
+vol_err_t readbyte(struct volio *volio, const goffset offset, guint8 *byte);
+vol_err_t readinto(struct volio *volio, const goffset offset, const gsize size,
                   gpointer container);
 
-VErrcode copyout(struct volio *volio, struct vfile *vfile);
+vol_err_t copyout(struct volio *volio, struct vfile *vfile);
 
 #endif

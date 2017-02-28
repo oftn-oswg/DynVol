@@ -14,7 +14,7 @@
 #include <gio/gio.h>
 #include "dynvol.h"
 
-#define volstruct struct __attribute__((__packed__))
+#define vol_struct struct __attribute__((__packed__))
 
 typedef enum {
     VFMT_STARSIEGE= 0,
@@ -23,29 +23,29 @@ typedef enum {
     VFMT_LAST
 } VFormat;
 
-volstruct header {
+vol_struct header {
     gchar ident[4];
     guint32 val;
 };
 
-volstruct VBLK {
+vol_struct VBLK {
     struct header header;
     gchar *data;
 };
 
-volstruct vols {
+vol_struct vols {
     struct header header;
     guint32 offset;
     GPtrArray *data;
 };
 
-volstruct volv {
+vol_struct volv {
     struct header header;
     guint32 offset;
     GArray *data;
 };
 
-volstruct vval {
+vol_struct vval {
     guint32 field_1;
     guint32 field_2;
     guint32 field_3;
@@ -53,7 +53,7 @@ volstruct vval {
     guint8 endcap;
 };
 
-volstruct vfile {
+vol_struct vfile {
     gchar *path;
     gchar *path_canonical;
     gchar *name;
@@ -66,21 +66,21 @@ volstruct vfile {
     struct VBLK data;
 };
 
-volstruct footer {
+vol_struct footer {
     struct vols unknown_vstr;
     struct volv unknown_vval;
     struct vols filenames;
     struct volv fileprops;
 };
 
-volstruct volio {
+vol_struct volio {
     GFile *identifier;
     GFileInputStream *readstream;
 };
 
 
-/* This is VOL on the outside. */
-volstruct volume {
+/* This is vol_t on the outside. */
+vol_struct volume {
     gchar *path;
     struct volio volio;
     GPtrArray *files;
@@ -89,28 +89,28 @@ volstruct volume {
     struct header header;
     struct footer footer;
     VFormat format;
-    VErrcode error;
+    vol_err_t error;
 };
 
 /* Fetches metadata and stores it inside vol */
-VErrcode vol_getmetadata(vol_t handle);
+vol_err_t vol_getmetadata(vol_t handle);
 
 /* Fetches volume footer and stores it inside vol */
-VErrcode vol_getfooter(vol_t handle);
+vol_err_t vol_getfooter(vol_t handle);
 
 /* Fetches a header */
-VErrcode vol_getheader(vol_t handle, struct header *header,
+vol_err_t vol_getheader(vol_t handle, struct header *header,
                        const guint32 offset);
 
 /* Functions for skipping the first two arrays in the footer
  * Probably temporary
  */
-VErrcode vol_getvstr(vol_t handle);
-VErrcode vol_getvval(vol_t handle);
+vol_err_t vol_getvstr(vol_t handle);
+vol_err_t vol_getvval(vol_t handle);
 
 /* Functions for fetching file metadata */
-VErrcode vol_getfilenames(vol_t handle);
-VErrcode vol_getfileprops(vol_t handle);
+vol_err_t vol_getfilenames(vol_t handle);
+vol_err_t vol_getfileprops(vol_t handle);
 
 /* Function to free files array */
 void vol_filesarray_free(gpointer file);

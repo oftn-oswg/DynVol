@@ -11,6 +11,7 @@
 #define __DYNVOL_H__
 
 #include <glib.h>
+#include "vol_err.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -19,44 +20,8 @@ extern "C" {
 /* Handle for your volume. */
 typedef gpointer vol_t;
 
-#define VOL_ERR_LEN 128
-/* This is pretty arbitrary for now */
-
-typedef enum {
-    VERR_OK= 0,
-    VERR_UNKNOWN,
-    VERR_FILE_NOT_FOUND,
-    VERR_DESTINATION_FILE_PRESENT,
-    VERR_ARCHIVE_UNRECOGNIZED,
-    VERR_UNSUPPORTED_ARCHIVE,
-    VERR_BROKEN_ARCHIVE,
-    VERR_UNRRECOGNIZED_HEADER,
-    VERR_UNEXPECTED_EOF,
-    VERR_SEEK_FAILED,
-    VERR_READ_FAILED,
-    VERR_CLOSE_FAILED,
-    VERR_LAST /* Not actually an error */
-} VErrcode;
-
-
-
-/* struct for DynVol errors */
-struct _errstruct {
-    VErrcode code;
-    gchar message[VOL_ERR_LEN];
-    /*
-     * addtl_data not used yet
-     */
-    /*
-    gpointer addtl_data;
-    */
-};
-
-typedef struct _errstruct vol_error_t;
-
-
 /**
- * vol_load:
+ * vol_open:
  * @volume: A string containing the path to a volume
  *
  * Open a volume @volume and return a handle #VOL for use in subsequent
@@ -67,7 +32,7 @@ typedef struct _errstruct vol_error_t;
 vol_t vol_open(const gchar* volume);
 
 /**
- * vol_unload:
+ * vol_close:
  * @handle: A volume handle as returned by vol_load
  *
  * Close and unload the volume associated with handle @handle.
@@ -81,7 +46,9 @@ void vol_close(vol_t handle);
  *
  * Returns a VErr containing information about the last run DynVol function.
  **/
-vol_error_t vol_get_error(vol_t handle);
+vol_err_t vol_get_error(vol_t handle);
+
+const gchar *vol_strerror(vol_err_t err);
 
 
 struct volfilelist {
