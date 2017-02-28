@@ -2,8 +2,8 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ([2.69])
-AC_INIT([DynVol], [0.0.2], [swooshycueb@tearmedia.info],
-                     [libdynvol], [https://github.com/SwooshyCueb/DynVol])
+AC_INIT([DynVol], [0.0.2], [root@swooshalicio.us],
+                     [libdynvol], [https://github.com/oftn-oswg/DynVol])
 AC_CONFIG_SRCDIR([src/dynvol_private.h])
 AC_REVISION([$Revision: 0.2 $])
 AC_CONFIG_AUX_DIR([src/tools])
