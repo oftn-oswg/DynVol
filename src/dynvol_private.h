@@ -93,24 +93,24 @@ volstruct volume {
 };
 
 /* Fetches metadata and stores it inside vol */
-VErrcode vol_getmetadata(VOL handle);
+VErrcode vol_getmetadata(vol_t handle);
 
 /* Fetches volume footer and stores it inside vol */
-VErrcode vol_getfooter(VOL handle);
+VErrcode vol_getfooter(vol_t handle);
 
 /* Fetches a header */
-VErrcode vol_getheader(VOL handle, struct header *header,
+VErrcode vol_getheader(vol_t handle, struct header *header,
                        const guint32 offset);
 
 /* Functions for skipping the first two arrays in the footer
  * Probably temporary
  */
-VErrcode vol_getvstr(VOL handle);
-VErrcode vol_getvval(VOL handle);
+VErrcode vol_getvstr(vol_t handle);
+VErrcode vol_getvval(vol_t handle);
 
 /* Functions for fetching file metadata */
-VErrcode vol_getfilenames(VOL handle);
-VErrcode vol_getfileprops(VOL handle);
+VErrcode vol_getfilenames(vol_t handle);
+VErrcode vol_getfileprops(vol_t handle);
 
 /* Function to free files array */
 void vol_filesarray_free(gpointer file);

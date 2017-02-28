@@ -21,7 +21,7 @@
 #include <gio/gio.h>
 #include <libgen.h>
 
-VOL vol_load(const gchar* path)
+vol_t vol_open(const gchar* path)
 {
     GError *error = NULL;
     GIOStatus ret = G_IO_STATUS_NORMAL;
@@ -130,7 +130,7 @@ VOL vol_load(const gchar* path)
 }
 
 
-void vol_unload(VOL handle)
+void vol_close(vol_t handle)
 {
     log_todo("Figure out how to return errors from vol_unload");
     struct volume* vhnd = handle;
@@ -176,7 +176,7 @@ void vol_unload(VOL handle)
 
 }
 
-VErrcode vol_getheader(VOL handle, struct header *header, const guint32 offset)
+VErrcode vol_getheader(vol_t handle, struct header *header, const guint32 offset)
 {
     struct volume* vhnd = handle;
     log_info("Fetching header");
@@ -189,7 +189,7 @@ VErrcode vol_getheader(VOL handle, struct header *header, const guint32 offset)
     return err;
 }
 
-VErrcode vol_getfooter(VOL handle)
+VErrcode vol_getfooter(vol_t handle)
 {
     VErrcode err;
     struct volume* vhnd = handle;
@@ -220,7 +220,7 @@ VErrcode vol_getfooter(VOL handle)
     return vol_getfileprops(handle);
 }
 
-VErrcode vol_getmetadata(VOL handle)
+VErrcode vol_getmetadata(vol_t handle)
 {
     struct volume* vhnd = handle;
     log_info("Fetching volume metadata.");
@@ -251,7 +251,7 @@ VErrcode vol_getmetadata(VOL handle)
     return vol_getfooter(handle);
 }
 
-VErrcode vol_getvstr(VOL handle)
+VErrcode vol_getvstr(vol_t handle)
 {
     guint i;
     VErrcode err;
@@ -293,7 +293,7 @@ VErrcode vol_getvstr(VOL handle)
     return err;
 }
 
-VErrcode vol_getvval(VOL handle)
+VErrcode vol_getvval(vol_t handle)
 {
     guint i;
     VErrcode err;
@@ -334,7 +334,7 @@ VErrcode vol_getvval(VOL handle)
     return err;
 }
 
-VErrcode vol_getfilenames(VOL handle)
+VErrcode vol_getfilenames(vol_t handle)
 {
     struct volume* vhnd = handle;
     struct vfile *curfile;
@@ -428,7 +428,7 @@ VErrcode vol_getfilenames(VOL handle)
     return err;
 }
 
-VErrcode vol_getfileprops(VOL handle)
+VErrcode vol_getfileprops(vol_t handle)
 {
     struct volume* vhnd = handle;
     struct vfile *vfile;
@@ -552,7 +552,7 @@ VErrcode vol_getfileprops(VOL handle)
     return err;
 }
 
-struct volfilelist vol_get_filelist(VOL handle, gboolean canonicalized)
+struct volfilelist vol_get_filelist(vol_t handle, gboolean canonicalized)
 {
     struct volume* vhnd = handle;
     struct volfilelist filelist;
@@ -596,7 +596,7 @@ void vol_set_debug(guint mask)
     log_todo("Potentially handle logging level per volume?");
 }
 
-void temp_vol_test_rleout(VOL handle)
+void temp_vol_test_rleout(vol_t handle)
 {
     struct volume* vhnd = handle;
     copyout(&vhnd->volio, (struct vfile*)g_ptr_array_index(vhnd->files, 0));

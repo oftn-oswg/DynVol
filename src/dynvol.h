@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 /* Handle for your volume. */
-typedef gpointer VOL;
+typedef gpointer vol_t;
 
 #define VOL_ERR_LEN 128
 /* This is pretty arbitrary for now */
@@ -52,7 +52,7 @@ struct _errstruct {
     */
 };
 
-typedef struct _errstruct VErr;
+typedef struct _errstruct vol_error_t;
 
 
 /**
@@ -64,7 +64,7 @@ typedef struct _errstruct VErr;
  *
  * Returns: A #VOL on success, %NULL on failure.
  **/
-VOL vol_load(const gchar* volume);
+vol_t vol_open(const gchar* volume);
 
 /**
  * vol_unload:
@@ -72,7 +72,7 @@ VOL vol_load(const gchar* volume);
  *
  * Close and unload the volume associated with handle @handle.
  **/
-void vol_unload(VOL handle);
+void vol_close(vol_t handle);
 
 
 /**
@@ -81,7 +81,7 @@ void vol_unload(VOL handle);
  *
  * Returns a VErr containing information about the last run DynVol function.
  **/
-VErr vol_get_error(VOL handle);
+vol_error_t vol_get_error(vol_t handle);
 
 
 struct volfilelist {
@@ -95,7 +95,7 @@ struct volfilelist {
  *
  * Returns a volfilenames struct containing the filenames within the volume.
  **/
-struct volfilelist vol_get_filelist(VOL handle, gboolean canonicalize);
+struct volfilelist vol_get_filelist(vol_t handle, gboolean canonicalize);
 
 
 void vol_set_debug(guint mask);
@@ -133,7 +133,7 @@ enum vol_loglevels {
  * Extracts the first file found in the volume.
  * This function is temporary, for obvious reasons.
  **/
-void temp_vol_test_rleout(VOL handle);
+void temp_vol_test_rleout(vol_t handle);
 
 
 #ifdef __cplusplus

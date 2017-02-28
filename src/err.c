@@ -13,9 +13,9 @@
 
 /* yeah, this function gets its own file */
 
-VErr vol_get_error(VOL handle)
+vol_error_t vol_get_error(vol_t handle)
 {
-    VErr ret;
+    vol_error_t ret;
     struct volume* vhnd = handle;
 
     ret.code = vhnd->error;

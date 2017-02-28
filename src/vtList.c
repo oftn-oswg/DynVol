@@ -39,7 +39,7 @@ int main(int argc, char** argv)
     gchar a;
     guint vcount = 0;
     gchar *expr, *volname;
-    VOL volhandle;
+    vol_t volhandle;
     GPatternSpec *internalglob;
     gboolean canonicalize = FALSE;
     GPtrArray *volpaths =  g_ptr_array_new_with_free_func(g_free);
@@ -96,8 +96,8 @@ int main(int argc, char** argv)
     {
         g_debug("Getting file list for %s\n",
                 (gchar*)g_ptr_array_index(volpaths,i));
-        volhandle = vol_load((gchar*)g_ptr_array_index(volpaths,i));
-        VErr err = vol_get_error(volhandle);
+        volhandle = vol_open((gchar*)g_ptr_array_index(volpaths,i));
+        vol_error_t err = vol_get_error(volhandle);
         if (err.code != 0)
         {
             for (j = 0; j < 128; j++)
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
                 g_free(vfiles.filelist[j]);
             }
         }
-        vol_unload(volhandle);
+        vol_close(volhandle);
     }
 
     return 0;
