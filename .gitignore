@@ -1,0 +1,46 @@
+# qtcreator
+/*.user
+
+# autotools
+Makefile
+Makefile.in
+config.h
+config.h.in
+/autom4te.cache
+/autoscan.log
+/autoscan-*.log
+/aclocal.m4
+/config.log
+/config.status
+/configure
+/configure.scan
+/libtool
+/src/tools
+/stamp-h1
+
+# build directories
+.deps
+.libs
+
+# compiled object files
+*.o
+*.lo
+
+# compiled dynamic libraries
+*.so
+*.dll
+*.dylib
+
+# compiled static libraries
+*.a
+*.la
+*.lai
+
+# compiled executables
+*.exe
+
+# stuff not caught by above rules
+/src/vtList
+/src/vtList_static
+/src/vtTest
+/src/vtTest_static
