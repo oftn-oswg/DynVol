@@ -28,6 +28,6 @@ vol_err_t readbyte(struct volio *volio, const goffset offset, guint8 *byte);
 vol_err_t readinto(struct volio *volio, const goffset offset, const gsize size,
                   gpointer container);
 
-vol_err_t copyout(struct volio *volio, struct vfile *vfile);
+vol_err_t copyout(struct vfile *vfile);
 
 #endif

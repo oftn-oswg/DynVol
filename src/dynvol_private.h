@@ -16,6 +16,9 @@
 
 #define vol_struct struct __attribute__((__packed__))
 
+// Forward declarations
+vol_struct volume;
+
 typedef enum {
     VFMT_STARSIEGE= 0,
     VFMT_TRIBES,
@@ -54,6 +57,7 @@ vol_struct vval {
 };
 
 vol_struct vfile {
+    struct volume *vol;
     gchar *path;
     gchar *path_canonical;
     gchar *name;

@@ -19,7 +19,7 @@
 int main(int argc, char** argv)
 {
     vol_levelmask = VOL_LOG_LEVEL_MASK
-                    + /* VOL_LOG_LEVEL_MOREDEBUG + VOL_LOG_LEVEL_FIXME + VOL_LOG_LEVEL_TODO + */
+                    + VOL_LOG_LEVEL_MOREDEBUG + /* VOL_LOG_LEVEL_FIXME + VOL_LOG_LEVEL_TODO + */
                     G_LOG_LEVEL_DEBUG + G_LOG_LEVEL_INFO;
     g_log_set_handler(G_LOG_DOMAIN, vol_levelmask, logfunc, NULL);
     vol_set_debug(vol_levelmask);
@@ -28,7 +28,11 @@ int main(int argc, char** argv)
         vol_open("/home/swooshy/devstuff/libdynvol/DynVol/Starsiege/samples/set6/foldertest1.vol");
     vol_close(volhandle);
     volhandle =
-        vol_open("/home/swooshy/devstuff/libdynvol/DynVol/Starsiege/samples/set1/rletest.vol");
+        vol_open("/home/swooshy/devstuff/libdynvol/DynVol/Starsiege/samples/set3/rletest.vol");
+    temp_vol_test_rleout(volhandle);
+    vol_close(volhandle);
+    volhandle =
+        vol_open("/home/swooshy/devstuff/libdynvol/DynVol/Starsiege/samples/set1/lzhtest.vol");
     temp_vol_test_rleout(volhandle);
     vol_close(volhandle);
     volhandle = vol_open("/this/file/doesnt/exist.vol");

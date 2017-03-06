@@ -389,6 +389,7 @@ vol_err_t vol_getfilenames(vol_t handle)
                 log_debug("String at offset 0x%lx indexed. Size is %d. Pulling now.", os, j);
                 gchar *data, *sanitary, *pathcopy1, *pathcopy2;
                 curfile = (struct vfile*)g_malloc(sizeof(struct vfile));
+                curfile->vol = vhnd;
                 curfile->data.data = NULL;
                 data = readpart(&vhnd->volio, (guint64)os, sizeof(gchar)*j);
                 sanitary = sanitizepath(data);
@@ -599,5 +600,5 @@ void vol_set_debug(guint mask)
 void temp_vol_test_rleout(vol_t handle)
 {
     struct volume* vhnd = handle;
-    copyout(&vhnd->volio, (struct vfile*)g_ptr_array_index(vhnd->files, 0));
+    copyout((struct vfile*)g_ptr_array_index(vhnd->files, 0));
 }

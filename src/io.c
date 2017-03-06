@@ -33,10 +33,11 @@ vol_err_t readbyte(struct volio *volio, const goffset offset, guint8 *byte)
 {
     log_moredebug("Reading byte at offset 0x%lx.", offset);
     (*byte) = 0x00;
-    guint64 rd;
+    gsize rd;
     GError *error = NULL;
     log_moredebug("Seeking...");
-    if (!g_seekable_seek(G_SEEKABLE(volio->readstream), offset, G_SEEK_SET, NULL, &error))
+    if (!g_seekable_seek(G_SEEKABLE(volio->readstream), offset, G_SEEK_SET,
+                         NULL, &error))
     {
         log_critical("Seek failed:\t%s", error->message);
         return VOL_ERR_SEEK;
@@ -52,13 +53,10 @@ vol_err_t readbyte(struct volio *volio, const goffset offset, guint8 *byte)
         log_critical("Stream has already ended. offset 0x%lx not reached.",
                      offset);
         return VOL_ERR_EOF;
-    } else if (rd =! (gsize)sizeof(guint8)) {
+    } else if (rd != (gsize)sizeof(guint8)) {
         log_message("Reached end of stream. Read %lu bytes.", rd);
     } else {
-        /*
         log_moredebug("Read %lu bytes.", rd);
-        */
-        log_fixme("Read function does not return proper number of bytes read.");
     }
     return VOL_ERR_OK;
 }
@@ -67,17 +65,18 @@ vol_err_t readinto(struct volio *volio, const goffset offset, const gsize size,
                   gpointer container)
 {
     log_debug("Reading %lu bytes at offset 0x%lx.", size, offset);
-    guint64 rd;
+    gsize rd;
     GError *error = NULL;
     log_moredebug("Seeking...");
-    if (!g_seekable_seek(G_SEEKABLE(volio->readstream), offset, G_SEEK_SET, NULL, &error))
+    if (!g_seekable_seek(G_SEEKABLE(volio->readstream), offset, G_SEEK_SET,
+                         NULL, &error))
     {
         log_critical("Seek failed:\t%s", error->message);
         return VOL_ERR_SEEK;
     }
     log_moredebug("Reading...");
-    if(!g_input_stream_read_all(G_INPUT_STREAM(volio->readstream), container, size, &rd, NULL,
-                                &error))
+    if(!g_input_stream_read_all(G_INPUT_STREAM(volio->readstream), container,
+                                size, &rd, NULL, &error))
     {
         log_critical("Could not read from stream:\t%s", error->message);
         log_debug("Read %lu bytes before error.", rd);
@@ -86,13 +85,10 @@ vol_err_t readinto(struct volio *volio, const goffset offset, const gsize size,
         log_critical("Stream has already ended. offset 0x%lx not reached.",
                      offset);
         return VOL_ERR_EOF;
-    } else if (rd =! size) {
+    } else if (rd != size) {
         log_message("Reached end of stream. Read %lu bytes.", rd);
     } else {
-        /*
         log_moredebug("Read %lu bytes.", rd);
-        */
-        log_fixme("Read function does not return proper number of bytes read.");
     }
     return VOL_ERR_OK;
 }
@@ -106,25 +102,25 @@ vol_err_t readinto(struct volio *volio, const goffset offset, const gsize size,
  * For now we will simply extract to the working directory. We can deal with
  * folders and such later.
  */
-vol_err_t copyout(struct volio *volio, struct vfile *vfile)
+vol_err_t copyout(struct vfile *vfile)
 {
+    struct volio *volio = &vfile->vol->volio;
     struct rleio fileio;
     GError *error = NULL;
     gchar *path = vfile->name;
     gchar buffer[512];
-    guint32 i, buffsize, v_offset, f_offset = 0;
-    gsize rd, rt;
+    guint32 i, v_offset, f_offset = 0;
+    gsize rt, rd, buffsize;
     if (g_file_test (path, G_FILE_TEST_EXISTS))
     {
-        log_warning("Destination file %s already exists..",
-                     path);
+        log_warning("Destination file %s already exists..", path);
         return VOL_ERR_EXISTS;
     }
     log_info("Attempting to open %s for writing.", path);
 
     fileio.identifier = g_file_new_for_path(path);
-    fileio.writestream = g_file_create(fileio.identifier, G_FILE_CREATE_NONE, NULL,
-                                           &error);
+    fileio.writestream = g_file_create(fileio.identifier, G_FILE_CREATE_NONE,
+                                       NULL, &error);
     if (!fileio.writestream)
     {
         log_error("Failed opening %s for writing.\n\t%s", path, error->message);
@@ -135,21 +131,23 @@ vol_err_t copyout(struct volio *volio, struct vfile *vfile)
 
     log_debug("Seeking to offset 0x%lx in volume.", v_offset);
 
-    if (!g_seekable_seek(G_SEEKABLE(volio->readstream), v_offset, G_SEEK_SET, NULL, &error))
+    if (!g_seekable_seek(G_SEEKABLE(volio->readstream), v_offset, G_SEEK_SET,
+                         NULL, &error))
     {
         log_critical("Seek failed:\t%s", error->message);
         return VOL_ERR_SEEK;
     }
-    for (i=0; i < vfile->size; i+=512)
+    for (i=0; i < vfile->packed_size; i+=512)
     {
-        if ((vfile->size - i) > 512)
+        if ((vfile->packed_size - i) > 512)
             buffsize = 512;
         else
-            buffsize = vfile->size - i;
+            buffsize = vfile->packed_size - i;
 
-        log_moredebug("Reading...");
-        if(!g_input_stream_read_all(G_INPUT_STREAM(volio->readstream), &buffer, buffsize, &rd, NULL,
-                                    &error))
+        //log_moredebug("Reading...");
+        log_moredebug("Attempting to read %lu bytes.", buffsize);
+        if(!g_input_stream_read_all(G_INPUT_STREAM(volio->readstream), &buffer,
+                                    buffsize, &rd, NULL, &error))
         {
             log_critical("Could not read from stream:\t%s", error->message);
             log_debug("Read %lu bytes before error.", rd);
@@ -157,30 +155,26 @@ vol_err_t copyout(struct volio *volio, struct vfile *vfile)
         } else if (rd == 0) {
             log_critical("Stream has already ended.");
             return VOL_ERR_EOF;
-        } else if (rd =! buffsize) {
+        } else if (rd != buffsize) {
             log_message("Reached end of stream. Read %lu bytes.", rd);
-            // need to make sure it only writes this much, too
         } else {
-            /*
             log_moredebug("Read %lu bytes.", rd);
-            */
-            log_fixme("Read function does not return proper number of bytes read.");
         }
         log_moredebug("Writing...");
-        if(!g_output_stream_write_all(G_OUTPUT_STREAM(fileio.writestream), &buffer, buffsize, &rt, NULL,
-                                    &error))
+        if(!g_output_stream_write_all(G_OUTPUT_STREAM(fileio.writestream),
+                                      &buffer, rd, &rt, NULL, &error))
         {
             log_critical("Could not write to file:\t%s", error->message);
             log_debug("Wrote %u bytes before error.", rt);
             return VOL_ERR_READ;
-        } else if (rt =! buffsize) {
+        } else if (rt != buffsize) {
             log_message("Reached end of stream. Wrote %u bytes.", rt);
         } else {
             log_moredebug("Wrote %lu bytes.", rt);
-            //log_fixme("Write function does not return proper number of bytes written.");
         }
     }
-    if (!(g_output_stream_close(G_OUTPUT_STREAM(fileio.writestream), NULL, &error)))
+    if (!(g_output_stream_close(G_OUTPUT_STREAM(fileio.writestream), NULL,
+                                &error)))
         log_critical("Couldn't close output stream:\t%s", error->message);
 
     log_debug("Freeing writestream");
@@ -188,6 +182,5 @@ vol_err_t copyout(struct volio *volio, struct vfile *vfile)
     log_debug("Freeing file identifier");
     g_object_unref(fileio.identifier);
 
-    //should we free error?
     return VOL_ERR_OK;
 }
