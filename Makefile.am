@@ -4,10 +4,14 @@ ACLOCAL_AMFLAGS = -I autotools
 
 SUBDIRS = src
 
-dist_doc_DATA = README.md \
-                LICENSE.md
+docs_SOURCES = README.md \
+               LICENSE.md
+scripts_SOURCES = autogen.sh
+nodist_noinst_vcs_SOURCES = .gitignore
 
-noinst_SCRIPTS = autogen.sh
+dist_doc_DATA = $(docs_SOURCES)
+noinst_SCRIPTS = $(scripts_SOURCES)
+nodist_noinst_DATA = $(nodist_noinst_vcs_SOURCES)
 
 MAINTAINERCLEANFILES = Makefile.in \
                        aclocal.m4 \
