@@ -25,32 +25,26 @@ libdynvol_la_LDFLAGS = -version-info 0:2:0
 libdynvol_la_LIBADD  = $(GLIB_LIBS) $(GIO_LIBS)
 libdynvol_la_CFLAGS  = -DG_LOG_DOMAIN=\"DynVol\" $(AM_CFLAGS)
 
+if STATIC_TOOLS
+TOOLS_LDFLAGS = -static $(AM_LDFLAGS)
+else
+TOOLS_LDFLAGS = $(AM_LDFLAGS)
+endif
+
 bin_PROGRAMS = vtTest \
-               vtTest_static \
-               vtList \
-               vtList_static
+               vtList
 
 vtTest_SOURCES = test.c \
                  logging.c
 vtTest_LDADD   = libdynvol.la $(GLIB_LIBS) $(GIO_LIBS)
+vtTest_LDFLAGS = $(TOOLS_LDFLAGS)
 vtTest_CFLAGS  = $(AM_CFLAGS)
-
-vtTest_static_SOURCES = test.c \
-                        logging.c
-vtTest_static_LDADD   = libdynvol.la $(GLIB_LIBS) $(GIO_LIBS)
-vtTest_static_LDFLAGS = -static
-vtTest_static_CFLAGS  = $(AM_CFLAGS)
 
 vtList_SOURCES = vtList.c \
                  logging.c
-vtList_LDADD   = libdynvol.la $(GLIB_LIBS)
+vtList_LDADD   = libdynvol.la $(GLIB_LIBS) $(GIO_LIBS)
+vtList_LDFLAGS = $(TOOLS_LDFLAGS)
 vtList_CFLAGS  = $(AM_CFLAGS)
-
-vtList_static_SOURCES = vtList.c \
-                        logging.c
-vtList_static_LDADD   = libdynvol.la $(GLIB_LIBS)
-vtList_static_LDFLAGS = -static
-vtList_static_CFLAGS  = $(AM_CFLAGS)
 
 MAINTAINERCLEANFILES = Makefile.in \
                        Makefile

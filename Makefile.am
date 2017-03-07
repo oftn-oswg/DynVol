@@ -1,5 +1,7 @@
 ## Process this file with automake to produce Makefile.in
 
+AUTOMAKE_OPTIONS = 1.13 foreign
+
 ACLOCAL_AMFLAGS = -I autotools
 
 SUBDIRS = src
